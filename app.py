@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request, send_from_directory
 from keys import KEYS, generate_key
 from datetime import datetime
+from dateutil.parser import parse as parse_date
 import os
 
 app = Flask(__name__, static_folder='public')
@@ -21,7 +22,7 @@ def validate():
         return jsonify({"valid": False, "error": "No key provided"}), 400
 
     if key in KEYS:
-        expiry = KEYS[key]
+        expiry = parse_date(KEYS[key])  # Converts ISO string to datetime
         if datetime.utcnow() < expiry:
             return jsonify({"valid": True})
         else:
@@ -34,5 +35,5 @@ def static_proxy(path):
     return send_from_directory('public', path)
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))  # Render sets PORT
+    port = int(os.environ.get("PORT", 5000))  # required by Render
     app.run(host='0.0.0.0', port=port)
