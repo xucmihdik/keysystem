@@ -10,7 +10,7 @@ app = Flask(__name__, static_folder='public')
 USED_IPS = {}
 
 # Owner secret token
-OWNER_SECRET = "your_secret_token_here"  # change this to something secure
+OWNER_SECRET = "p"  # change this to something secure
 
 # Serve homepage
 @app.route('/')
