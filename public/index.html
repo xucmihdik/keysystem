@@ -1,94 +1,107 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Clark Key System</title>
+  <meta charset="UTF-8">
+  <title>Clark KeySystem</title>
   <style>
     body {
       margin: 0;
-      background: linear-gradient(to bottom right, #000, #fff);
       font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, black, white);
+      color: #fff;
       display: flex;
       align-items: center;
       justify-content: center;
       height: 100vh;
-      overflow: hidden;
-      animation: fadein 1.5s ease-in;
-    }
-    @keyframes fadein {
-      from { opacity: 0; transform: scale(0.95); }
-      to { opacity: 1; transform: scale(1); }
-    }
-    .container {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid #fff;
-      border-radius: 15px;
-      padding: 40px;
-      text-align: center;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
-    }
-    h1 {
-      color: #fff;
-      margin-bottom: 10px;
-    }
-    p {
-      color: #ddd;
-      margin-bottom: 20px;
-    }
-    .btn {
-      padding: 12px 25px;
-      font-size: 16px;
-      border: none;
-      border-radius: 8px;
-      background: #000;
-      color: #fff;
-      cursor: pointer;
       transition: background 0.3s ease;
     }
-    .btn:hover {
-      background: #444;
+
+    .container {
+      text-align: center;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 0 30px rgba(0,0,0,0.5);
+      animation: fadeIn 0.7s ease-in-out;
     }
-    #keyBox {
+
+    .key-box {
+      background: #fff;
+      color: #111;
+      padding: 15px 25px;
       margin-top: 20px;
-      color: #0f0;
-      font-size: 20px;
-      background: #111;
-      padding: 15px;
       border-radius: 8px;
-      display: none;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    button {
+      background: #fff;
+      color: #111;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: all 0.2s ease;
+    }
+
+    button:hover {
+      background: #222;
+      color: #fff;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>🔑 Clark Key System</h1>
-    <p>To get your key, complete the steps below:</p>
-    <button class="btn" onclick="goToLinkvertise()">Generate Key</button>
-    <div id="keyBox"></div>
+  <div class="container" id="main">
+    <h1>Clark KeySystem</h1>
+    <p id="status">Click the button to generate your key</p>
+    <button onclick="checkStatus()">🔑 Generate Key</button>
   </div>
 
   <script>
-    function goToLinkvertise() {
-      window.location.href = "https://link-hub.net/1367787/WmEGaMKAKlRJ";
+    function checkStatus() {
+      document.getElementById("status").textContent = "⏳ Checking key status...";
+
+      fetch("/check_key_status")
+        .then(res => res.json())
+        .then(data => {
+          if (data.has_key) {
+            showKey(data.key, data.expires_at, true);
+          } else {
+            window.location.href = "https://link-hub.net/1367787/WmEGaMKAKlRJ";
+          }
+        })
+        .catch(() => {
+          document.getElementById("status").textContent = "❌ Network error.";
+        });
     }
 
-    // When returned from Linkvertise, this runs
-    const url = new URL(window.location.href);
-    if (url.searchParams.get("ref") === "linkvertise") {
+    function showKey(key, expiry, isOld) {
+      const main = document.getElementById("main");
+      main.innerHTML = `
+        <h1>${isOld ? "🔁 You already created a key!" : "✅ Key Generated!"}</h1>
+        <div class="key-box">${key}</div>
+        <p>⏳ Valid until: ${new Date(expiry).toLocaleString()}</p>
+      `;
+    }
+
+    // Optional: auto-detect ?ref=linkvertise
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("ref") === "linkvertise") {
       fetch("/generate_key?ref=linkvertise")
         .then(res => res.json())
         .then(data => {
           if (data.key) {
-            const box = document.getElementById("keyBox");
-            box.innerHTML = `<b>Your Key:</b> ${data.key}<br><small>Valid for 24 hours</small>`;
-            box.style.display = "block";
-          } else {
-            alert("❌ " + (data.error || "Something went wrong."));
+            showKey(data.key, data.expires_at, data.status === "already");
           }
-        })
-        .catch(() => alert("❌ Failed to contact server."));
+        });
     }
   </script>
 </body>
