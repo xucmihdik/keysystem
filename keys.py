@@ -5,6 +5,6 @@ KEYS = {}
 
 def generate_key():
     key = f"valid-{uuid.uuid4().hex[:10]}"
-    expires_at = (datetime.utcnow() + timedelta(hours=24)).isoformat()
-    KEYS[key] = expires_at
-    return key, expires_at
+    expires_at = datetime.utcnow() + timedelta(hours=24)
+    KEYS[key] = expires_at.isoformat()
+    return key, expires_at.isoformat()
