@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Key Generator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: Arial;
+      background: #111;
+      color: #fff;
+      display: flex;
+      height: 100vh;
+      align-items: center;
+      justify-content: center;
+    }
+    .box {
+      background: #222;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      font-size: 16px;
+      margin-top: 15px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .output {
+      margin-top: 15px;
+      background: #333;
+      padding: 10px;
+      border-radius: 8px;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>🔐 Generate a Key</h2>
+    <p>This key will expire in 24 hours.</p>
+    <button onclick="gen()">Generate Key</button>
+    <div class="output" id="result"></div>
+  </div>
+
+  <script>
+    async function gen() {
+      const res = await fetch('/generate_key', { method: 'POST' });
+      const data = await res.json();
+      document.getElementById('result').innerHTML =
+        `<strong>Key:</strong> ${data.key}<br><strong>Expires:</strong> ${new Date(data.expires_at).toLocaleString()}`;
+    }
+  </script>
+</body>
+</html>
