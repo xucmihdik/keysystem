@@ -1,28 +1,20 @@
 from flask import Flask, jsonify, request, send_from_directory
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil.parser import parse as parse_date
-import uuid
+from keys import KEYS, generate_key  # ✅ External keys logic
 import os
 
 app = Flask(__name__, static_folder='public')
 
-# In-memory key storage and IP tracker
-KEYS = {}
+# Track which IPs have already generated a key
 USED_IPS = set()
 
-# Function to generate a key
-def generate_key():
-    key = f"clark-{uuid.uuid4().hex[:10]}"
-    expires_at = datetime.utcnow().isoformat()
-    KEYS[key] = expires_at
-    return key, expires_at
-
-# Serve index.html
+# Serve the main HTML interface
 @app.route('/')
 def serve_index():
     return send_from_directory('public', 'index.html')
 
-# Route for generating a key (only once per IP and with ref check)
+# Generate a key if coming from Linkvertise and not already used
 @app.route('/generate_key')
 def generate():
     ip = request.remote_addr
@@ -36,12 +28,14 @@ def generate():
 
     key, expires_at = generate_key()
     USED_IPS.add(ip)
+
     return jsonify({"key": key, "expires_at": expires_at})
 
-# Route for validating a key
+# Validate the key
 @app.route('/validate_key')
 def validate():
     key = request.args.get('key')
+
     if not key:
         return jsonify({"valid": False, "error": "No key provided"}), 400
 
@@ -49,18 +43,18 @@ def validate():
     if not expiry:
         return jsonify({"valid": False, "error": "Invalid key"})
 
-    expiry_dt = parse_date(expiry)
-    if datetime.utcnow() > expiry_dt + timedelta(hours=24):
+    expiry_time = parse_date(expiry)
+    if datetime.utcnow() > expiry_time:
         return jsonify({"valid": False, "error": "Key expired"})
 
     return jsonify({"valid": True})
 
-# Serve other static files (CSS, images, etc.)
+# Serve other static files like styles, images, etc.
 @app.route('/<path:path>')
 def static_proxy(path):
     return send_from_directory('public', path)
 
-# Required by Render
+# Run the app (Render/Replit-compatible)
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
