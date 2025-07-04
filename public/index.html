@@ -3,128 +3,92 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Key Generator</title>
+  <title>Clark Key System</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
     body {
-      background: linear-gradient(to right, #141E30, #243B55);
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      color: white;
+      margin: 0;
+      background: linear-gradient(to bottom right, #000, #fff);
+      font-family: 'Segoe UI', sans-serif;
       display: flex;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
       height: 100vh;
+      overflow: hidden;
+      animation: fadein 1.5s ease-in;
     }
-
+    @keyframes fadein {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
     .container {
       background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 30px;
-      border-radius: 12px;
+      border: 1px solid #fff;
+      border-radius: 15px;
+      padding: 40px;
       text-align: center;
-      width: 90%;
-      max-width: 400px;
-      backdrop-filter: blur(12px);
-      animation: fadeIn 0.8s ease;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
     }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: scale(0.9); }
-      to   { opacity: 1; transform: scale(1); }
-    }
-
     h1 {
+      color: #fff;
       margin-bottom: 10px;
-      font-size: 1.8rem;
     }
-
     p {
-      margin-bottom: 25px;
-      font-size: 1rem;
-      color: #ccc;
+      color: #ddd;
+      margin-bottom: 20px;
     }
-
-    button {
-      background: #00ffa2;
+    .btn {
+      padding: 12px 25px;
+      font-size: 16px;
       border: none;
-      padding: 12px 20px;
-      font-size: 1rem;
       border-radius: 8px;
+      background: #000;
+      color: #fff;
       cursor: pointer;
-      color: black;
-      transition: all 0.3s ease;
+      transition: background 0.3s ease;
     }
-
-    button:hover {
-      background: #00d68f;
+    .btn:hover {
+      background: #444;
     }
-
-    .key-box {
+    #keyBox {
       margin-top: 20px;
-      background: #222;
-      padding: 12px;
+      color: #0f0;
+      font-size: 20px;
+      background: #111;
+      padding: 15px;
       border-radius: 8px;
-      font-size: 0.95rem;
-      word-break: break-all;
-      position: relative;
-    }
-
-    .copy-btn {
-      position: absolute;
-      top: 8px;
-      right: 10px;
-      font-size: 0.85rem;
-      background: transparent;
-      border: none;
-      color: #00ffa2;
-      cursor: pointer;
-    }
-
-    .hidden {
       display: none;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>🔐 Generate Your Access Key</h1>
-    <p>Click the button below to generate your 24-hour access key.</p>
-    <button id="generateBtn">Generate Key</button>
-
-    <div id="keySection" class="key-box hidden">
-      <span id="keyText">Your key will appear here...</span>
-      <button class="copy-btn" onclick="copyKey()">Copy</button>
-    </div>
+    <h1>🔑 Clark Key System</h1>
+    <p>To get your key, complete the steps below:</p>
+    <button class="btn" onclick="goToLinkvertise()">Generate Key</button>
+    <div id="keyBox"></div>
   </div>
 
   <script>
-    const generateBtn = document.getElementById('generateBtn');
-    const keyText = document.getElementById('keyText');
-    const keySection = document.getElementById('keySection');
+    function goToLinkvertise() {
+      window.location.href = "https://link-hub.net/1367787/WmEGaMKAKlRJ";
+    }
 
-    generateBtn.addEventListener('click', async () => {
-      generateBtn.textContent = "Generating...";
-      try {
-        const res = await fetch("/generate_key");
-        const data = await res.json();
-        keyText.textContent = data.key;
-        keySection.classList.remove("hidden");
-      } catch (err) {
-        keyText.textContent = "⚠️ Error generating key.";
-        keySection.classList.remove("hidden");
-      }
-      generateBtn.textContent = "Generate Key";
-    });
-
-    function copyKey() {
-      navigator.clipboard.writeText(keyText.textContent).then(() => {
-        alert("✅ Key copied to clipboard!");
-      });
+    // When returned from Linkvertise, this runs
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("ref") === "linkvertise") {
+      fetch("/generate_key?ref=linkvertise")
+        .then(res => res.json())
+        .then(data => {
+          if (data.key) {
+            const box = document.getElementById("keyBox");
+            box.innerHTML = `<b>Your Key:</b> ${data.key}<br><small>Valid for 24 hours</small>`;
+            box.style.display = "block";
+          } else {
+            alert("❌ " + (data.error || "Something went wrong."));
+          }
+        })
+        .catch(() => alert("❌ Failed to contact server."));
     }
   </script>
 </body>
