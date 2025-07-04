@@ -12,7 +12,6 @@ def handler(request):
             "body": json.dumps({"valid": False, "error": "No key provided"})
         }
 
-    # Simple logic: only keys starting with "valid-" are accepted
     if key.startswith("valid-"):
         return {
             "statusCode": 200,
