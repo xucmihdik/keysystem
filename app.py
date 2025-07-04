@@ -1,20 +1,23 @@
 from flask import Flask, jsonify, request, send_from_directory
-from datetime import datetime, timedelta
+from datetime import datetime
 from dateutil.parser import parse as parse_date
-from keys import KEYS, generate_key  # ✅ External keys logic
+from keys import KEYS, generate_key
 import os
 
 app = Flask(__name__, static_folder='public')
 
-# Track which IPs have already generated a key
-USED_IPS = set()
+# Track IPs and their generated keys
+USED_IPS = {}
 
-# Serve the main HTML interface
+# Owner secret token
+OWNER_SECRET = "your_secret_token_here"  # change this to something secure
+
+# Serve homepage
 @app.route('/')
 def serve_index():
     return send_from_directory('public', 'index.html')
 
-# Generate a key if coming from Linkvertise and not already used
+# Public generate key (must come from Linkvertise, one per IP)
 @app.route('/generate_key')
 def generate():
     ip = request.remote_addr
@@ -24,14 +27,31 @@ def generate():
         return jsonify({"error": "You must come from Linkvertise."}), 403
 
     if ip in USED_IPS:
-        return jsonify({"error": "You already generated a key."}), 403
+        existing_key = USED_IPS[ip]
+        expiry = KEYS.get(existing_key)
+        return jsonify({
+            "key": existing_key,
+            "expires_at": expiry,
+            "message": "You already generated a key."
+        })
 
     key, expires_at = generate_key()
-    USED_IPS.add(ip)
+    USED_IPS[ip] = key
 
     return jsonify({"key": key, "expires_at": expires_at})
 
-# Validate the key
+# Owner endpoint (no IP tracking, unlimited)
+@app.route('/owner_generate')
+def owner_generate():
+    token = request.args.get("token")
+
+    if token != OWNER_SECRET:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    key, expires_at = generate_key()
+    return jsonify({"key": key, "expires_at": expires_at})
+
+# Validate a key
 @app.route('/validate_key')
 def validate():
     key = request.args.get('key')
@@ -49,12 +69,12 @@ def validate():
 
     return jsonify({"valid": True})
 
-# Serve other static files like styles, images, etc.
+# Serve other static files
 @app.route('/<path:path>')
 def static_proxy(path):
     return send_from_directory('public', path)
 
-# Run the app (Render/Replit-compatible)
+# Run the app (works on Replit, Render, etc.)
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
