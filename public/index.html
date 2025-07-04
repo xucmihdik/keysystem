@@ -1,1 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Key Generator</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
+    body {
+      background: linear-gradient(to right, #141E30, #243B55);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 30px;
+      border-radius: 12px;
+      text-align: center;
+      width: 90%;
+      max-width: 400px;
+      backdrop-filter: blur(12px);
+      animation: fadeIn 0.8s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    h1 {
+      margin-bottom: 10px;
+      font-size: 1.8rem;
+    }
+
+    p {
+      margin-bottom: 25px;
+      font-size: 1rem;
+      color: #ccc;
+    }
+
+    button {
+      background: #00ffa2;
+      border: none;
+      padding: 12px 20px;
+      font-size: 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      color: black;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      background: #00d68f;
+    }
+
+    .key-box {
+      margin-top: 20px;
+      background: #222;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      word-break: break-all;
+      position: relative;
+    }
+
+    .copy-btn {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      font-size: 0.85rem;
+      background: transparent;
+      border: none;
+      color: #00ffa2;
+      cursor: pointer;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔐 Generate Your Access Key</h1>
+    <p>Click the button below to generate your 24-hour access key.</p>
+    <button id="generateBtn">Generate Key</button>
+
+    <div id="keySection" class="key-box hidden">
+      <span id="keyText">Your key will appear here...</span>
+      <button class="copy-btn" onclick="copyKey()">Copy</button>
+    </div>
+  </div>
+
+  <script>
+    const generateBtn = document.getElementById('generateBtn');
+    const keyText = document.getElementById('keyText');
+    const keySection = document.getElementById('keySection');
+
+    generateBtn.addEventListener('click', async () => {
+      generateBtn.textContent = "Generating...";
+      try {
+        const res = await fetch("/generate_key");
+        const data = await res.json();
+        keyText.textContent = data.key;
+        keySection.classList.remove("hidden");
+      } catch (err) {
+        keyText.textContent = "⚠️ Error generating key.";
+        keySection.classList.remove("hidden");
+      }
+      generateBtn.textContent = "Generate Key";
+    });
+
+    function copyKey() {
+      navigator.clipboard.writeText(keyText.textContent).then(() => {
+        alert("✅ Key copied to clipboard!");
+      });
+    }
+  </script>
+</body>
+</html>
