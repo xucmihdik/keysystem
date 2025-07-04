@@ -6,6 +6,6 @@
   "routes": [
     { "src": "/generate_key", "dest": "api/generate_key.py" },
     { "src": "/validate_key", "dest": "api/validate_key.py" },
-    { "src": "/", "dest": "index.html" }
+    { "src": "/", "dest": "/public/index.html" }
   ]
 }
