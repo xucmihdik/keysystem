@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, send_from_directory
-from datetime import datetime
+from datetime import datetime, timedelta
 from keys import KEYS, USED_IPS, generate_key
+import uuid
 import os
 
 app = Flask(__name__, static_folder="public")
@@ -26,12 +27,18 @@ def check_key_status():
 @app.route("/generate_key")
 def generate_from_user():
     ip = request.remote_addr
-    ref = request.args.get("ref")
+
+    # Check if already has a key
     if ip in USED_IPS:
         key = USED_IPS[ip]
         return jsonify({ "key": key, "expires_at": KEYS[key], "status": "already" })
-    if ref != "linkvertise":
-        return jsonify({ "error": "Missing Linkvertise ref" }), 403
+
+    # Secure check: only allow if coming from Linkvertise
+    referrer = request.referrer or ""
+    if "linkvertise" not in referrer.lower():
+        return jsonify({ "error": "You must access this from Linkvertise." }), 403
+
+    # Generate new key
     key, expiry = generate_key(ip)
     return jsonify({ "key": key, "expires_at": expiry, "status": "new" })
 
