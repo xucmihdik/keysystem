@@ -5,10 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Clark KeySystem</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
+    * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: 'Segoe UI', sans-serif;
@@ -19,9 +16,7 @@
       justify-content: center;
       min-height: 100vh;
       padding: 20px;
-      transition: background 0.3s ease;
     }
-
     .container {
       max-width: 90%;
       width: 400px;
@@ -32,12 +27,7 @@
       box-shadow: 0 0 30px rgba(0,0,0,0.5);
       animation: fadeIn 0.7s ease-in-out;
     }
-
-    h1 {
-      font-size: 1.8rem;
-      margin-bottom: 10px;
-    }
-
+    h1 { font-size: 1.8rem; margin-bottom: 10px; }
     .key-box {
       background: #fff;
       color: #111;
@@ -49,7 +39,6 @@
       word-break: break-all;
       position: relative;
     }
-
     .copy-icon {
       position: absolute;
       right: 10px;
@@ -60,11 +49,7 @@
       cursor: pointer;
       opacity: 0.8;
     }
-
-    .copy-icon:hover {
-      opacity: 1;
-    }
-
+    .copy-icon:hover { opacity: 1; }
     button {
       background: #fff;
       color: #111;
@@ -74,32 +59,16 @@
       border-radius: 8px;
       cursor: pointer;
       margin-top: 15px;
-      transition: all 0.3s ease;
     }
-
-    button:hover {
-      background: #222;
-      color: #fff;
-    }
-
+    button:hover { background: #222; color: #fff; }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(15px); }
       to { opacity: 1; transform: translateY(0); }
     }
-
     @media (max-width: 480px) {
-      .container {
-        padding: 20px 15px;
-        width: 100%;
-      }
-
-      .key-box {
-        font-size: 0.95rem;
-      }
-
-      button {
-        width: 100%;
-      }
+      .container { padding: 20px 15px; width: 100%; }
+      .key-box { font-size: 0.95rem; }
+      button { width: 100%; }
     }
   </style>
 </head>
@@ -121,8 +90,7 @@
           } else {
             window.location.href = "https://link-hub.net/1367787/WmEGaMKAKlRJ";
           }
-        })
-        .catch(() => {
+        }).catch(() => {
           document.getElementById("status").textContent = "❌ Network error.";
         });
     }
@@ -131,7 +99,7 @@
       const main = document.getElementById("main");
       main.innerHTML = `
         <h1>${isOld ? "🔁 Key already created" : "✅ Key Generated!"}</h1>
-        <div class="key-box" id="key-box">
+        <div class="key-box">
           ${key}
           <img src="https://cdn-icons-png.flaticon.com/512/1828/1828911.png" alt="Copy" class="copy-icon" onclick="copyKey('${key}')">
         </div>
@@ -149,11 +117,17 @@
 
     const params = new URLSearchParams(window.location.search);
     if (params.get("ref") === "linkvertise") {
-      fetch("/generate_key?ref=linkvertise")
+      fetch("/get_token")
         .then(res => res.json())
         .then(data => {
-          if (data.key) {
-            showKey(data.key, data.expires_at, data.status === "already");
+          if (data.token) {
+            fetch(`/generate_key?token=${data.token}`)
+              .then(res => res.json())
+              .then(data => {
+                if (data.key) {
+                  showKey(data.key, data.expires_at, data.status === "already");
+                }
+              });
           }
         });
     }
