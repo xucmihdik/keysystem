@@ -2,8 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Clark KeySystem</title>
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       font-family: 'Segoe UI', sans-serif;
@@ -12,39 +17,48 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      height: 100vh;
+      min-height: 100vh;
+      padding: 20px;
       transition: background 0.3s ease;
     }
 
     .container {
+      max-width: 90%;
+      width: 400px;
       text-align: center;
-      background: rgba(0, 0, 0, 0.6);
-      padding: 30px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 25px;
       border-radius: 15px;
       box-shadow: 0 0 30px rgba(0,0,0,0.5);
       animation: fadeIn 0.7s ease-in-out;
     }
 
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 10px;
+    }
+
     .key-box {
       background: #fff;
       color: #111;
-      padding: 15px 25px;
-      margin-top: 20px;
+      padding: 12px 18px;
+      margin: 20px auto 10px;
       border-radius: 8px;
-      font-size: 18px;
+      font-size: 1rem;
       font-weight: bold;
+      word-break: break-all;
     }
 
     button {
       background: #fff;
       color: #111;
       border: none;
-      padding: 12px 24px;
-      font-size: 16px;
+      padding: 12px 22px;
+      font-size: 1rem;
       border-radius: 8px;
       cursor: pointer;
-      margin-top: 20px;
-      transition: all 0.2s ease;
+      margin-top: 15px;
+      transition: all 0.3s ease;
     }
 
     button:hover {
@@ -53,22 +67,36 @@
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
+      from { opacity: 0; transform: translateY(15px); }
       to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 20px 15px;
+        width: 100%;
+      }
+
+      .key-box {
+        font-size: 0.95rem;
+      }
+
+      button {
+        width: 100%;
+      }
     }
   </style>
 </head>
 <body>
   <div class="container" id="main">
     <h1>Clark KeySystem</h1>
-    <p id="status">Click the button to generate your key</p>
+    <p id="status">Click the button below to generate your key</p>
     <button onclick="checkStatus()">🔑 Generate Key</button>
   </div>
 
   <script>
     function checkStatus() {
       document.getElementById("status").textContent = "⏳ Checking key status...";
-
       fetch("/check_key_status")
         .then(res => res.json())
         .then(data => {
@@ -86,13 +114,12 @@
     function showKey(key, expiry, isOld) {
       const main = document.getElementById("main");
       main.innerHTML = `
-        <h1>${isOld ? "🔁 You already created a key!" : "✅ Key Generated!"}</h1>
+        <h1>${isOld ? "🔁 Key already created" : "✅ Key Generated!"}</h1>
         <div class="key-box">${key}</div>
         <p>⏳ Valid until: ${new Date(expiry).toLocaleString()}</p>
       `;
     }
 
-    // Optional: auto-detect ?ref=linkvertise
     const params = new URLSearchParams(window.location.search);
     if (params.get("ref") === "linkvertise") {
       fetch("/generate_key?ref=linkvertise")
