@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Clark KeySystem</title>
   <style>
     * {
@@ -47,6 +47,22 @@
       font-size: 1rem;
       font-weight: bold;
       word-break: break-all;
+      position: relative;
+    }
+
+    .copy-icon {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      opacity: 0.8;
+    }
+
+    .copy-icon:hover {
+      opacity: 1;
     }
 
     button {
@@ -115,9 +131,20 @@
       const main = document.getElementById("main");
       main.innerHTML = `
         <h1>${isOld ? "🔁 Key already created" : "✅ Key Generated!"}</h1>
-        <div class="key-box">${key}</div>
+        <div class="key-box" id="key-box">
+          ${key}
+          <img src="https://cdn-icons-png.flaticon.com/512/1828/1828911.png" alt="Copy" class="copy-icon" onclick="copyKey('${key}')">
+        </div>
         <p>⏳ Valid until: ${new Date(expiry).toLocaleString()}</p>
       `;
+    }
+
+    function copyKey(key) {
+      navigator.clipboard.writeText(key).then(() => {
+        alert("✅ Key copied to clipboard!");
+      }).catch(() => {
+        alert("❌ Failed to copy key.");
+      });
     }
 
     const params = new URLSearchParams(window.location.search);
