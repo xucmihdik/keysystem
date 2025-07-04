@@ -1,12 +1,12 @@
 import uuid
 from datetime import datetime, timedelta
 
-# In-memory storage of keys
-KEYS = {}
+KEYS = {}       # Stores: key -> expiry
+USED_IPS = {}   # Stores: ip -> key
 
-def generate_key():
-    # Create a key with clark- prefix
+def generate_key(ip):
     key = f"clark-{uuid.uuid4().hex[:10]}"
-    expires_at = datetime.utcnow() + timedelta(hours=24)
-    KEYS[key] = expires_at.isoformat()
-    return key, expires_at.isoformat()
+    expiry = datetime.utcnow() + timedelta(hours=24)
+    KEYS[key] = expiry.isoformat()
+    USED_IPS[ip] = key
+    return key, expiry.isoformat()
