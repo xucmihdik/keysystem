@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request, send_from_directory
 from keys import KEYS, generate_key
 from datetime import datetime
+import os
 
 app = Flask(__name__, static_folder='public')
 
@@ -28,10 +29,10 @@ def validate():
     else:
         return jsonify({"valid": False, "error": "Invalid key"})
 
-# Optional: catch-all for static files in /public
 @app.route('/<path:path>')
 def static_proxy(path):
     return send_from_directory('public', path)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))  # Render sets PORT
+    app.run(host='0.0.0.0', port=port)
