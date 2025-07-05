@@ -19,6 +19,7 @@ def load_data():
     else:
         used_ips = {}
 
+    # Clean up expired keys
     now = datetime.utcnow()
     keys = {k: v for k, v in keys.items() if datetime.fromisoformat(v) > now}
     used_ips = {ip: k for ip, k in used_ips.items() if k in keys}
