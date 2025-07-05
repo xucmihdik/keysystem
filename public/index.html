@@ -67,14 +67,13 @@
 
     .key-box {
       background: #fff;
-      color: #000;
+      color: #111;
       border-radius: 10px;
       padding: 12px 16px;
       margin: 20px 0;
       display: flex;
-      justify-content: center;
+      justify-content: space-between;
       align-items: center;
-      gap: 12px;
       word-break: break-word;
     }
 
@@ -104,26 +103,15 @@
 
     .notification {
       position: fixed;
-      top: 50px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #fff;
-      padding: 12px 20px;
-      color: #000;
+      top: 20px;
+      right: 20px;
+      background: #111;
+      padding: 10px 16px;
+      color: #fff;
       border-radius: 8px;
       font-size: 0.95rem;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
-      z-index: 999;
-      animation: fadeInNotif 0.3s ease, fadeOutNotif 0.3s ease 2.7s forwards;
-    }
-
-    @keyframes fadeInNotif {
-      from { opacity: 0; transform: translate(-50%, -10px); }
-      to { opacity: 1; transform: translate(-50%, 0); }
-    }
-
-    @keyframes fadeOutNotif {
-      to { opacity: 0; transform: translate(-50%, -10px); }
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+      z-index: 99;
     }
 
     @keyframes fadeIn {
@@ -183,6 +171,7 @@
           if (data.has_key) {
             showKey(data.key, data.expires_at, true);
           } else {
+            // Go to Linkvertise (NOT get_token directly)
             window.location.href = "https://link-hub.net/1367787/WmEGaMKAKlRJ";
           }
         })
@@ -194,14 +183,13 @@
     function showKey(key, expiry, isOld) {
       const main = document.getElementById("main");
       main.innerHTML = `
-        <h1>${isOld ? "🔁 Key already created" : "✅ Key Claimed Successfully!"}</h1>
+        <h1>${isOld ? "🔁 Key already created" : "✅ Key Generated!"}</h1>
         <div class="key-box">
-          <span>clark-${key}</span>
-          <img src="https://cdn-icons-png.flaticon.com/512/60/60525.png" alt="Copy" class="copy-icon" onclick="copyKey('clark-${key}')">
+          <span>${key}</span>
+          <img src="https://cdn-icons-png.flaticon.com/512/1828/1828911.png" alt="Copy" class="copy-icon" onclick="copyKey('${key}')">
         </div>
-        <p>⏳ Valid for 24 hours</p>
+        <p>⏳ Valid until: ${new Date(expiry).toLocaleString()}</p>
       `;
-      copyKey(`clark-${key}`);
     }
 
     function copyKey(key) {
