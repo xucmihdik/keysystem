@@ -81,7 +81,7 @@
       width: 22px;
       height: 22px;
       cursor: pointer;
-      filter: invert(0.1);
+      margin-left: 10px;
     }
 
     button {
@@ -104,14 +104,23 @@
     .notification {
       position: fixed;
       top: 20px;
-      right: 20px;
-      background: #111;
-      padding: 10px 16px;
-      color: #fff;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #fff;
+      padding: 12px 20px;
+      color: #000;
       border-radius: 8px;
       font-size: 0.95rem;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
-      z-index: 99;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      opacity: 0;
+      animation: fadeInNotif 0.3s forwards;
+    }
+
+    @keyframes fadeInNotif {
+      to {
+        opacity: 1;
+      }
     }
 
     @keyframes fadeIn {
@@ -171,7 +180,7 @@
           if (data.has_key) {
             showKey(data.key, data.expires_at, true);
           } else {
-            // Go to Linkvertise (NOT get_token directly)
+            // Redirect to Linkvertise
             window.location.href = "https://link-hub.net/1367787/WmEGaMKAKlRJ";
           }
         })
@@ -186,10 +195,12 @@
         <h1>${isOld ? "🔁 Key already created" : "✅ Key Generated!"}</h1>
         <div class="key-box">
           <span>${key}</span>
-          <img src="https://cdn-icons-png.flaticon.com/512/1828/1828911.png" alt="Copy" class="copy-icon" onclick="copyKey('${key}')">
+          <img src="https://www.shutterstock.com/image-vector/copy-icon-260nw-1260468262.jpg" 
+               alt="Copy" class="copy-icon" onclick="copyKey('${key}')">
         </div>
         <p>⏳ Valid until: ${new Date(expiry).toLocaleString()}</p>
       `;
+      copyKey(key); // Auto copy
     }
 
     function copyKey(key) {
