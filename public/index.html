@@ -148,12 +148,14 @@
 </head>
 <body>
 
+  <!-- Bubble background -->
   <div class="bubble" style="width: 60px; height: 60px; left: 5%; animation-delay: 0s;"></div>
   <div class="bubble" style="width: 100px; height: 100px; left: 25%; animation-delay: 4s;"></div>
   <div class="bubble" style="width: 80px; height: 80px; left: 50%; animation-delay: 2s;"></div>
   <div class="bubble" style="width: 70px; height: 70px; left: 70%; animation-delay: 6s;"></div>
   <div class="bubble" style="width: 90px; height: 90px; left: 85%; animation-delay: 1.5s;"></div>
 
+  <!-- Main UI -->
   <div class="container" id="main">
     <h1>Clark KeySystem</h1>
     <p id="status">Click the button below to get your key</p>
@@ -169,7 +171,8 @@
           if (data.has_key) {
             showKey(data.key, data.expires_at, true);
           } else {
-            window.location.href = "/get_token";
+            // Go to Linkvertise (NOT get_token directly)
+            window.location.href = "https://link-hub.net/1367787/WmEGaMKAKlRJ";
           }
         })
         .catch(() => {
