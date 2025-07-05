@@ -70,6 +70,7 @@ def claim():
 
         .bubble {
           position: absolute;
+          top: 100vh;
           border-radius: 50%;
           background: rgba(255, 255, 255, 0.08);
           animation: floatUp 20s linear infinite;
@@ -77,11 +78,11 @@ def claim():
 
         @keyframes floatUp {
           0% {
-            transform: translateY(100vh) scale(0.5);
+            transform: translateY(0) scale(0.5);
             opacity: 0.3;
           }
           100% {
-            transform: translateY(-10vh) scale(1.2);
+            transform: translateY(-120vh) scale(1.2);
             opacity: 0;
           }
         }
@@ -154,7 +155,8 @@ def claim():
       </style>
     </head>
     <body>
-      <!-- Bubbles (same as index.html) -->
+
+      <!-- Floating Bubbles (now fixed) -->
       <div class="bubble" style="width: 60px; height: 60px; left: 5%; animation-delay: 0s;"></div>
       <div class="bubble" style="width: 100px; height: 100px; left: 25%; animation-delay: 4s;"></div>
       <div class="bubble" style="width: 80px; height: 80px; left: 50%; animation-delay: 2s;"></div>
