@@ -55,38 +55,24 @@ def claim():
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <title>Key Claimed</title>
       <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
-          height: 100%;
-          width: 100%;
+          height: 100%; width: 100%;
           font-family: 'Segoe UI', sans-serif;
           background: linear-gradient(135deg, #000, #fff);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          position: relative;
-          overflow: hidden;
+          display: flex; align-items: center; justify-content: center;
+          overflow: hidden; position: relative;
         }
-
         .bubble {
           position: absolute;
-          top: 100vh;
           border-radius: 50%;
           background: rgba(255, 255, 255, 0.08);
           animation: floatUp 20s linear infinite;
         }
-
         @keyframes floatUp {
-          0% {
-            transform: translateY(0) scale(0.5);
-            opacity: 0.3;
-          }
-          100% {
-            transform: translateY(-120vh) scale(1.2);
-            opacity: 0;
-          }
+          0% { transform: translateY(0) scale(0.5); opacity: 0.3; }
+          100% { transform: translateY(-120vh) scale(1.2); opacity: 0; }
         }
-
         .container {
           z-index: 2;
           background: rgba(0, 0, 0, 0.85);
@@ -99,13 +85,11 @@ def claim():
           box-shadow: 0 0 25px rgba(0, 0, 0, 0.6);
           animation: fadeIn 0.5s ease;
         }
-
         h1 {
-          font-size: 1.7rem;
+          font-size: 1.6rem;
           margin-bottom: 16px;
           color: #fff;
         }
-
         .key-box {
           background: #fff;
           color: #111;
@@ -115,20 +99,17 @@ def claim():
           display: inline-flex;
           align-items: center;
           gap: 10px;
-          word-break: break-word;
           font-weight: bold;
+          word-break: break-word;
         }
-
         .copy-icon {
           width: 22px;
           height: 22px;
           cursor: pointer;
         }
-
         p {
           color: #ccc;
         }
-
         .notification {
           position: fixed;
           top: 20px;
@@ -142,12 +123,10 @@ def claim():
           z-index: 99;
           animation: fadeInNotif 0.3s forwards;
         }
-
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
         }
-
         @keyframes fadeInNotif {
           from { opacity: 0; }
           to { opacity: 1; }
@@ -155,13 +134,12 @@ def claim():
       </style>
     </head>
     <body>
-
-      <!-- Floating Bubbles (now fixed) -->
-      <div class="bubble" style="width: 60px; height: 60px; left: 5%; animation-delay: 0s;"></div>
-      <div class="bubble" style="width: 100px; height: 100px; left: 25%; animation-delay: 4s;"></div>
-      <div class="bubble" style="width: 80px; height: 80px; left: 50%; animation-delay: 2s;"></div>
-      <div class="bubble" style="width: 70px; height: 70px; left: 70%; animation-delay: 6s;"></div>
-      <div class="bubble" style="width: 90px; height: 90px; left: 85%; animation-delay: 1.5s;"></div>
+      <!-- Bubbles -->
+      <div class="bubble" style="width: 60px; height: 60px; left: 5%; top: 100vh; animation-delay: 0s;"></div>
+      <div class="bubble" style="width: 100px; height: 100px; left: 25%; top: 100vh; animation-delay: 4s;"></div>
+      <div class="bubble" style="width: 80px; height: 80px; left: 50%; top: 100vh; animation-delay: 2s;"></div>
+      <div class="bubble" style="width: 70px; height: 70px; left: 70%; top: 100vh; animation-delay: 6s;"></div>
+      <div class="bubble" style="width: 90px; height: 90px; left: 85%; top: 100vh; animation-delay: 1.5s;"></div>
 
       <div class="container">
         <h1>✅ Key Claimed Successfully!</h1>
