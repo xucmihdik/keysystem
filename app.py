@@ -7,7 +7,7 @@ import os
 app = Flask(__name__, static_folder="public")
 
 TOKENS = {}
-SECRET_KEY = "p"  # Your owner secret
+SECRET_KEY = "p"
 
 @app.route("/")
 def home():
@@ -53,7 +53,7 @@ def claim():
     <head>
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
-      <title>Clark Key Claimed</title>
+      <title>Key Claimed</title>
       <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html, body {
@@ -86,7 +86,7 @@ def claim():
           animation: fadeIn 0.5s ease;
         }
         h1 {
-          font-size: 1.5rem;
+          font-size: 1.6rem;
           margin-bottom: 16px;
           color: #fff;
         }
@@ -110,9 +110,26 @@ def claim():
         p {
           color: #ccc;
         }
+        .notification {
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background: #111;
+          padding: 10px 16px;
+          color: #fff;
+          border-radius: 8px;
+          font-size: 0.95rem;
+          box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+          z-index: 99;
+          animation: fadeInNotif 0.3s forwards;
+        }
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInNotif {
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
       </style>
     </head>
@@ -129,7 +146,7 @@ def claim():
         <h1>✅ Key Claimed Successfully!</h1>
         <div class="key-box">
           <span id="key">clark-{{ key.replace('clark-', '') }}</span>
-          <img src="https://cdn.discordapp.com/attachments/1383696129388052542/1391042274351120467/download_2.png"
+          <img src="https://files.catbox.moe/qnfp07.png"
                alt="Copy" class="copy-icon" onclick="copyKey()">
         </div>
         <p>⏳ Valid for 24 hours</p>
@@ -139,8 +156,16 @@ def claim():
         function copyKey() {
           const keyText = document.getElementById("key").textContent;
           navigator.clipboard.writeText(keyText)
-            .then(() => alert("✅ Key copied to clipboard!"))
-            .catch(() => alert("❌ Failed to copy key."));
+            .then(() => showNotification("✅ Key copied to clipboard!"))
+            .catch(() => showNotification("❌ Failed to copy key."));
+        }
+
+        function showNotification(text) {
+          const notif = document.createElement("div");
+          notif.className = "notification";
+          notif.textContent = text;
+          document.body.appendChild(notif);
+          setTimeout(() => notif.remove(), 3000);
         }
       </script>
     </body>
