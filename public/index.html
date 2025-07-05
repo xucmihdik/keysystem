@@ -5,51 +5,121 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Clark KeySystem</title>
   <style>
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       font-family: 'Segoe UI', sans-serif;
+      overflow: hidden;
       background: linear-gradient(135deg, black, white);
       color: #fff;
+      height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 100vh;
-      padding: 20px;
+      position: relative;
     }
+
+    .bubbles {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    .bubbles span {
+      position: absolute;
+      display: block;
+      width: 20px;
+      height: 20px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      animation: rise 20s linear infinite;
+      bottom: -150px;
+    }
+
+    @keyframes rise {
+      0% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-1000px) scale(0.5);
+        opacity: 0;
+      }
+    }
+
     .container {
-      max-width: 90%;
-      width: 400px;
-      text-align: center;
-      background: rgba(0, 0, 0, 0.7);
+      z-index: 1;
+      width: 90%;
+      max-width: 400px;
       padding: 25px;
+      background: rgba(0, 0, 0, 0.75);
       border-radius: 15px;
-      box-shadow: 0 0 30px rgba(0,0,0,0.5);
-      animation: fadeIn 0.7s ease-in-out;
+      text-align: center;
+      box-shadow: 0 0 25px rgba(0, 0, 0, 0.6);
+      animation: fadeIn 0.6s ease;
     }
-    h1 { font-size: 1.8rem; margin-bottom: 10px; }
+
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 10px;
+    }
+
     .key-box {
       background: #fff;
       color: #111;
-      padding: 12px 18px;
+      border-radius: 10px;
       margin: 20px auto 10px;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: bold;
-      word-break: break-all;
+      padding: 15px;
       position: relative;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
     }
+
+    .key-text {
+      font-weight: bold;
+      font-size: 1rem;
+      word-break: break-word;
+      margin-bottom: 10px;
+    }
+
+    .divider {
+      height: 1px;
+      background: #ccc;
+      margin: 10px 0;
+    }
+
     .copy-icon {
-      position: absolute;
-      right: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 20px;
-      height: 20px;
+      width: 22px;
+      height: 22px;
       cursor: pointer;
       opacity: 0.8;
+      transition: 0.2s;
     }
-    .copy-icon:hover { opacity: 1; }
+
+    .copy-icon:hover {
+      opacity: 1;
+    }
+
+    .notify {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #333;
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      box-shadow: 0 0 10px rgba(0,0,0,0.4);
+      display: none;
+      z-index: 100;
+    }
+
     button {
       background: #fff;
       color: #111;
@@ -58,28 +128,55 @@
       font-size: 1rem;
       border-radius: 8px;
       cursor: pointer;
+      transition: all 0.3s ease;
       margin-top: 15px;
     }
-    button:hover { background: #222; color: #fff; }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(15px); }
-      to { opacity: 1; transform: translateY(0); }
+
+    button:hover {
+      background: #222;
+      color: #fff;
     }
-    @media (max-width: 480px) {
-      .container { padding: 20px 15px; width: 100%; }
-      .key-box { font-size: 0.95rem; }
-      button { width: 100%; }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
   </style>
 </head>
 <body>
+  <div class="bubbles">
+    <span style="left: 10%; animation-duration: 12s;"></span>
+    <span style="left: 25%; animation-duration: 15s;"></span>
+    <span style="left: 40%; animation-duration: 10s;"></span>
+    <span style="left: 55%; animation-duration: 18s;"></span>
+    <span style="left: 70%; animation-duration: 14s;"></span>
+    <span style="left: 85%; animation-duration: 11s;"></span>
+  </div>
+
   <div class="container" id="main">
     <h1>Clark KeySystem</h1>
     <p id="status">Click the button below to generate your key</p>
     <button onclick="checkStatus()">🔑 Generate Key</button>
   </div>
 
+  <div class="notify" id="notify">✅ Key copied to clipboard!</div>
+
   <script>
+    function showNotification(msg) {
+      const notify = document.getElementById("notify");
+      notify.textContent = msg;
+      notify.style.display = "block";
+      setTimeout(() => {
+        notify.style.display = "none";
+      }, 3000);
+    }
+
     function checkStatus() {
       document.getElementById("status").textContent = "⏳ Checking key status...";
       fetch("/check_key_status")
@@ -90,7 +187,8 @@
           } else {
             window.location.href = "https://link-hub.net/1367787/WmEGaMKAKlRJ";
           }
-        }).catch(() => {
+        })
+        .catch(() => {
           document.getElementById("status").textContent = "❌ Network error.";
         });
     }
@@ -100,7 +198,8 @@
       main.innerHTML = `
         <h1>${isOld ? "🔁 Key already created" : "✅ Key Generated!"}</h1>
         <div class="key-box">
-          ${key}
+          <div class="key-text">${key}</div>
+          <div class="divider"></div>
           <img src="https://cdn-icons-png.flaticon.com/512/1828/1828911.png" alt="Copy" class="copy-icon" onclick="copyKey('${key}')">
         </div>
         <p>⏳ Valid until: ${new Date(expiry).toLocaleString()}</p>
@@ -109,9 +208,9 @@
 
     function copyKey(key) {
       navigator.clipboard.writeText(key).then(() => {
-        alert("✅ Key copied to clipboard!");
+        showNotification("✅ Key copied to clipboard!");
       }).catch(() => {
-        alert("❌ Failed to copy key.");
+        showNotification("❌ Failed to copy key.");
       });
     }
 
