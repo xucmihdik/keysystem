@@ -5,7 +5,7 @@ KEYS = {}
 USED_IPS = {}
 
 def generate_key(ip):
-    key = f"clark-{uuid.uuid4().hex[:8]}"
+    key = f"clark-{uuid.uuid4().hex[:12]}"
     expires_at = datetime.utcnow() + timedelta(hours=24)
     KEYS[key] = expires_at.isoformat()
     USED_IPS[ip] = key
