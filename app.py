@@ -1,8 +1,8 @@
 from flask import Flask, request, jsonify, send_from_directory, render_template_string
 from keys import KEYS, USED_IPS, generate_key
 from datetime import datetime
-import os
 import uuid
+import os
 
 app = Flask(__name__, static_folder="public")
 
@@ -18,31 +18,17 @@ def check_key_status():
     ip = request.remote_addr
     if ip in USED_IPS:
         key = USED_IPS[ip]
-        return jsonify({ "has_key": True, "key": key, "expires_at": KEYS[key] })
-    return jsonify({ "has_key": False })
-
-@app.route("/get_token")
-def get_token():
-    ip = request.remote_addr
-    token = uuid.uuid4().hex[:24]
-    TOKENS[token] = ip
-    # Give this token link to Linkvertise as the destination
-    return jsonify({ "token": token, "destination": f"https://clark-keysystem.onrender.com/claim?token={token}" })
+        return jsonify({"has_key": True, "key": key, "expires_at": KEYS[key]})
+    return jsonify({"has_key": False})
 
 @app.route("/claim")
 def claim():
-    token = request.args.get("token")
     ip = request.remote_addr
-
-    if not token or token not in TOKENS or TOKENS[token] != ip:
-        return "Invalid token or IP mismatch", 403
 
     if ip in USED_IPS:
         key = USED_IPS[ip]
     else:
         key, _ = generate_key(ip)
-
-    del TOKENS[token]
 
     return render_template_string("""
     <!DOCTYPE html>
@@ -79,12 +65,26 @@ def claim():
     </html>
     """, key=key)
 
+@app.route("/owner_generate")
+def owner_generate():
+    secret = request.args.get("secret")
+    ip = request.remote_addr
+    if secret != SECRET_KEY:
+        return jsonify({ "error": "Unauthorized" }), 403
+
+    if ip in USED_IPS:
+        key = USED_IPS[ip]
+    else:
+        key, _ = generate_key(ip)
+
+    return jsonify({ "key": key, "expires_at": KEYS[key], "status": "owner" })
+
 @app.route("/validate_key")
 def validate_key():
     key = request.args.get("key")
     if key in KEYS and datetime.fromisoformat(KEYS[key]) > datetime.utcnow():
-        return jsonify({ "valid": True, "expires_at": KEYS[key] })
-    return jsonify({ "valid": False }), 404
+        return jsonify({"valid": True, "expires_at": KEYS[key]})
+    return jsonify({"valid": False}), 404
 
 @app.route("/<path:path>")
 def static_file(path):
