@@ -5,75 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Clark KeySystem</title>
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
     body {
+      margin: 0;
       font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, black, white);
-      color: #fff;
-      height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      background: linear-gradient(135deg, #000000, #ffffff);
       overflow: hidden;
-      position: relative;
-    }
-
-    .bubbles {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      z-index: 0;
-      overflow: hidden;
-      pointer-events: none;
-    }
-
-    .bubbles span {
-      position: absolute;
-      display: block;
-      width: 40px;
-      height: 40px;
-      background: rgba(255, 255, 255, 0.2);
-      box-shadow: 0 0 20px rgba(255,255,255,0.6);
-      border-radius: 50%;
-      bottom: -60px;
-      animation: floatUp 15s linear infinite;
-    }
-
-    .bubbles span:nth-child(1) { left: 10%; animation-delay: 0s; }
-    .bubbles span:nth-child(2) { left: 25%; animation-delay: 2s; }
-    .bubbles span:nth-child(3) { left: 40%; animation-delay: 4s; }
-    .bubbles span:nth-child(4) { left: 55%; animation-delay: 6s; }
-    .bubbles span:nth-child(5) { left: 70%; animation-delay: 1s; }
-    .bubbles span:nth-child(6) { left: 85%; animation-delay: 3s; }
-
-    @keyframes floatUp {
-      0% {
-        transform: translateY(0) scale(1);
-        opacity: 0.4;
-      }
-      100% {
-        transform: translateY(-1200px) scale(1.5);
-        opacity: 0;
-      }
     }
 
     .container {
       position: relative;
-      z-index: 1;
+      z-index: 2;
       max-width: 90%;
       width: 400px;
+      margin: auto;
+      top: 50%;
+      transform: translateY(-50%);
+      text-align: center;
       background: rgba(0, 0, 0, 0.75);
       padding: 25px;
       border-radius: 15px;
-      box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 0 30px rgba(0,0,0,0.6);
+      color: white;
       border: 2px solid white;
-      text-align: center;
-      animation: fadeIn 0.7s ease-in-out;
     }
 
     h1 {
@@ -89,9 +42,9 @@
       border-radius: 8px;
       font-size: 1rem;
       font-weight: bold;
-      word-break: break-word;
-      border: 2px dashed #000;
       position: relative;
+      word-break: break-word;
+      border: 2px dashed #222;
     }
 
     .copy-icon {
@@ -99,10 +52,10 @@
       right: 10px;
       top: 50%;
       transform: translateY(-50%);
-      width: 24px;
-      height: 24px;
+      width: 20px;
+      height: 20px;
       cursor: pointer;
-      opacity: 0.8;
+      opacity: 0.7;
     }
 
     .copy-icon:hover {
@@ -126,46 +79,58 @@
       color: #fff;
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(15px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .toast {
+    .notification {
       position: fixed;
       top: 20px;
       right: 20px;
-      background: rgba(0, 0, 0, 0.85);
+      background: #333;
       color: white;
       padding: 10px 20px;
-      border-radius: 8px;
-      font-size: 14px;
+      border-radius: 10px;
       opacity: 0;
-      animation: slideIn 0.3s forwards;
-      z-index: 9999;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      z-index: 999;
     }
 
-    @keyframes slideIn {
-      from { transform: translateY(-20px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
+    .notification.show {
+      opacity: 1;
     }
 
-    @media (max-width: 480px) {
-      .container {
-        width: 90%;
-        padding: 20px;
+    .bubbles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .bubble {
+      position: absolute;
+      bottom: -100px;
+      width: 20px;
+      height: 20px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 50%;
+      animation: rise 15s infinite ease-in;
+    }
+
+    @keyframes rise {
+      0% {
+        transform: translateY(0) scale(1);
+        opacity: 0.5;
       }
-      .key-box {
-        font-size: 0.9rem;
+      100% {
+        transform: translateY(-110vh) scale(1.5);
+        opacity: 0;
       }
     }
   </style>
 </head>
 <body>
-  <div class="bubbles">
-    <span></span><span></span><span></span>
-    <span></span><span></span><span></span>
-  </div>
+  <div class="bubbles" id="bubbles"></div>
 
   <div class="container" id="main">
     <h1>Clark KeySystem</h1>
@@ -173,7 +138,14 @@
     <button onclick="checkStatus()">🔑 Get Key</button>
   </div>
 
+  <div class="notification" id="notification">Key copied to clipboard</div>
+
   <script>
+    // Set cookie if user came from Linkvertise
+    if (document.referrer.includes("linkvertise.com")) {
+      document.cookie = "verified=true; path=/; max-age=300";
+    }
+
     function checkStatus() {
       document.getElementById("status").textContent = "⏳ Checking key status...";
       fetch("/check_key_status")
@@ -182,7 +154,15 @@
           if (data.has_key) {
             showKey(data.key, data.expires_at, true);
           } else {
-            window.location.href = "https://link-hub.net/1367787/WmEGaMKAKlRJ";
+            fetch("/generate_key")
+              .then(res => res.json())
+              .then(data => {
+                if (data.key) {
+                  showKey(data.key, data.expires_at, false);
+                } else {
+                  document.getElementById("status").textContent = "❌ " + (data.error || "Unknown error.");
+                }
+              });
           }
         })
         .catch(() => {
@@ -196,7 +176,7 @@
         <h1>${isOld ? "🔁 Key already created" : "✅ Key Generated!"}</h1>
         <div class="key-box">
           ${key}
-          <img src="https://cdn-icons-png.flaticon.com/512/1828/1828919.png" alt="Copy" class="copy-icon" onclick="copyKey('${key}')">
+          <img src="https://cdn-icons-png.flaticon.com/512/1828/1828911.png" class="copy-icon" onclick="copyKey('${key}')" />
         </div>
         <p>⏳ Valid until: ${new Date(expiry).toLocaleString()}</p>
       `;
@@ -204,38 +184,23 @@
 
     function copyKey(key) {
       navigator.clipboard.writeText(key).then(() => {
-        showToast("✅ Key copied to clipboard!");
-      }).catch(() => {
-        showToast("❌ Failed to copy key.");
+        const note = document.getElementById("notification");
+        note.classList.add("show");
+        setTimeout(() => {
+          note.classList.remove("show");
+        }, 3000);
       });
     }
 
-    function showToast(message) {
-      const toast = document.createElement("div");
-      toast.className = "toast";
-      toast.textContent = message;
-      document.body.appendChild(toast);
-      setTimeout(() => {
-        toast.style.opacity = "0";
-        setTimeout(() => toast.remove(), 1000);
-      }, 3000);
-    }
-
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("ref") === "linkvertise") {
-      fetch("/get_token")
-        .then(res => res.json())
-        .then(data => {
-          if (data.token) {
-            fetch(`/generate_key?token=${data.token}`)
-              .then(res => res.json())
-              .then(data => {
-                if (data.key) {
-                  showKey(data.key, data.expires_at, data.status === "already");
-                }
-              });
-          }
-        });
+    // Generate background bubbles
+    const bubbles = document.getElementById("bubbles");
+    for (let i = 0; i < 25; i++) {
+      const b = document.createElement("div");
+      b.className = "bubble";
+      b.style.left = `${Math.random() * 100}%`;
+      b.style.width = b.style.height = `${10 + Math.random() * 20}px`;
+      b.style.animationDuration = `${10 + Math.random() * 10}s`;
+      bubbles.appendChild(b);
     }
   </script>
 </body>
