@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -71,9 +71,8 @@
       border-radius: 10px;
       padding: 12px 16px;
       margin: 20px 0;
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      justify-content: center;
       gap: 10px;
       word-break: break-word;
     }
@@ -84,10 +83,9 @@
     }
 
     .copy-icon {
-      width: 20px;
-      height: 20px;
+      width: 22px;
+      height: 22px;
       cursor: pointer;
-      filter: invert(0.2);
     }
 
     button {
@@ -170,7 +168,7 @@
   <div class="bubble" style="width: 70px; height: 70px; left: 70%; animation-delay: 6s;"></div>
   <div class="bubble" style="width: 90px; height: 90px; left: 85%; animation-delay: 1.5s;"></div>
 
-  <!-- Main container -->
+  <!-- Main UI -->
   <div class="container" id="main">
     <h1>Clark KeySystem</h1>
     <p id="status">Click the button below to get your key</p>
@@ -203,7 +201,7 @@
         <h1>${isOld ? "🔁 Key already created" : "✅ Key Generated!"}</h1>
         <div class="key-box">
           <span class="key-text">${key}</span>
-          <img src="https://cdn-icons-png.flaticon.com/512/753/753345.png"
+          <img src="https://cdn.discordapp.com/attachments/1383696129388052542/1391042274351120467/download_2.png?ex=686a7492&is=68692312&hm=0b7c2bcebcd671f920f42f4177e5087317f5ff4260b819784fbb832e6e721534&"
                alt="Copy" class="copy-icon" onclick="copyKey('${key}')">
         </div>
         <p>⏳ Valid until: ${new Date(expiry).toLocaleString()}</p>
