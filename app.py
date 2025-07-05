@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_from_directory, render_template_string
+from flask import Flask, request, jsonify, send_from_directory, render_template_string, make_response
 from keys import KEYS, USED_IPS, generate_key
 from datetime import datetime
 import uuid
@@ -8,7 +8,7 @@ app = Flask(__name__, static_folder="public")
 
 ALLOWED_REF = "https://link-hub.net/1367787/WmEGaMKAKlRJ"
 TOKENS = {}
-SECRET_KEY = "p"  # change this to a secure secret
+SECRET_KEY = "p"  # Change this to something strong and secret
 
 @app.route("/")
 def home():
@@ -28,30 +28,37 @@ def get_token():
     if referer.startswith(ALLOWED_REF):
         token = uuid.uuid4().hex[:24]
         TOKENS[token] = request.remote_addr
-        return jsonify({ "token": token })
+        response = jsonify({ "token": token })
+        response.set_cookie("token", token, max_age=300)  # valid for 5 minutes
+        return response
     return jsonify({ "error": "Invalid referrer" }), 403
 
 @app.route("/claim")
 def claim():
-    token = request.args.get("token")
+    token = request.args.get("token") or request.cookies.get("token")
     ip = request.remote_addr
-    if not token or token not in TOKENS or TOKENS[token] != ip:
-        return "Invalid token or IP mismatch", 403
 
-    if ip in USED_IPS:
+    if not token:
+        return "❌ No token found", 403
+
+    if token == "skip" and ip in USED_IPS:
         key = USED_IPS[ip]
+    elif token in TOKENS and TOKENS[token] == ip:
+        if ip in USED_IPS:
+            key = USED_IPS[ip]
+        else:
+            key, _ = generate_key(ip)
+        del TOKENS[token]
     else:
-        key, _ = generate_key(ip)
+        return "❌ Invalid token or IP mismatch", 403
 
-    del TOKENS[token]
-
-    return render_template_string("""
+    html = f"""
     <!DOCTYPE html>
     <html>
     <head>
         <title>Key Claimed</title>
         <style>
-            body {
+            body {{
                 font-family: sans-serif;
                 background: #111;
                 color: white;
@@ -60,8 +67,8 @@ def claim():
                 align-items: center;
                 height: 100vh;
                 flex-direction: column;
-            }
-            .key {
+            }}
+            .key {{
                 background: white;
                 color: black;
                 padding: 15px;
@@ -69,16 +76,19 @@ def claim():
                 font-weight: bold;
                 font-size: 1.2rem;
                 margin-top: 10px;
-            }
+            }}
         </style>
     </head>
     <body>
         <h2>✅ Key Claimed Successfully!</h2>
-        <div class="key">{{ key }}</div>
+        <div class="key">{key}</div>
         <p>⏳ Valid for 24 hours</p>
     </body>
     </html>
-    """, key=key)
+    """
+    res = make_response(html)
+    res.set_cookie("token", "", max_age=0)
+    return res
 
 @app.route("/owner_generate")
 def owner_generate():
