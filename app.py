@@ -2,12 +2,13 @@ from flask import Flask, request, jsonify, send_from_directory
 from keys import KEYS, USED_IPS, generate_key
 from datetime import datetime, timedelta
 import uuid
+import os
 
 app = Flask(__name__, static_folder="public")
 
 ALLOWED_REF = "https://link-hub.net/1367787/WmEGaMKAKlRJ"
 TOKENS = {}
-SECRET_KEY = "p"  # Change this to a strong private key
+SECRET_KEY = "p"  # Change this to something secret and long
 
 @app.route("/")
 def home():
@@ -67,5 +68,7 @@ def owner_generate():
 def static_file(path):
     return send_from_directory("public", path)
 
+# Render-compatible entry point
 if __name__ == "__main__":
-    app.run(debug=True, port=8080)
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host="0.0.0.0", port=port)
