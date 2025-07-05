@@ -65,13 +65,16 @@ def claim():
         }
         .bubble {
           position: absolute;
+          top: 100vh;
           border-radius: 50%;
-          background: rgba(255, 255, 255, 0.1);
+          background: radial-gradient(circle, rgba(255,255,255,0.6), rgba(255,255,255,0.1));
           animation: floatUp 20s linear infinite;
+          box-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
+          filter: blur(1px);
         }
         @keyframes floatUp {
-          0% { transform: translateY(100vh) scale(0.5); opacity: 0.3; }
-          100% { transform: translateY(-10vh) scale(1.2); opacity: 0; }
+          0% { transform: translateY(0) scale(0.6); opacity: 0.3; }
+          100% { transform: translateY(-110vh) scale(1.2); opacity: 0; }
         }
         .container {
           z-index: 2;
