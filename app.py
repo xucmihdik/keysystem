@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_from_directory, render_template_string, make_response
+from flask import Flask, request, jsonify, send_from_directory, render_template_string, redirect
 from keys import KEYS, USED_IPS, generate_key
 from datetime import datetime
 import uuid
@@ -6,9 +6,8 @@ import os
 
 app = Flask(__name__, static_folder="public")
 
-ALLOWED_REF = "https://link-hub.net/1367787/WmEGaMKAKlRJ"
 TOKENS = {}
-SECRET_KEY = "p"  # Change this to something strong and secret
+SECRET_KEY = "p"  # You can change this to something more secure
 
 @app.route("/")
 def home():
@@ -24,41 +23,32 @@ def check_key_status():
 
 @app.route("/get_token")
 def get_token():
-    referer = request.headers.get("Referer", "")
-    if referer.startswith(ALLOWED_REF):
-        token = uuid.uuid4().hex[:24]
-        TOKENS[token] = request.remote_addr
-        response = jsonify({ "token": token })
-        response.set_cookie("token", token, max_age=300)  # valid for 5 minutes
-        return response
-    return jsonify({ "error": "Invalid referrer" }), 403
+    ip = request.remote_addr
+    token = uuid.uuid4().hex[:24]
+    TOKENS[token] = ip
+    return redirect(f"/claim?token={token}")
 
 @app.route("/claim")
 def claim():
-    token = request.args.get("token") or request.cookies.get("token")
+    token = request.args.get("token")
     ip = request.remote_addr
+    if not token or token not in TOKENS or TOKENS[token] != ip:
+        return "Invalid token or IP mismatch", 403
 
-    if not token:
-        return "❌ No token found", 403
-
-    if token == "skip" and ip in USED_IPS:
+    if ip in USED_IPS:
         key = USED_IPS[ip]
-    elif token in TOKENS and TOKENS[token] == ip:
-        if ip in USED_IPS:
-            key = USED_IPS[ip]
-        else:
-            key, _ = generate_key(ip)
-        del TOKENS[token]
     else:
-        return "❌ Invalid token or IP mismatch", 403
+        key, _ = generate_key(ip)
 
-    html = f"""
+    del TOKENS[token]
+
+    return render_template_string("""
     <!DOCTYPE html>
     <html>
     <head>
         <title>Key Claimed</title>
         <style>
-            body {{
+            body {
                 font-family: sans-serif;
                 background: #111;
                 color: white;
@@ -67,8 +57,8 @@ def claim():
                 align-items: center;
                 height: 100vh;
                 flex-direction: column;
-            }}
-            .key {{
+            }
+            .key {
                 background: white;
                 color: black;
                 padding: 15px;
@@ -76,19 +66,16 @@ def claim():
                 font-weight: bold;
                 font-size: 1.2rem;
                 margin-top: 10px;
-            }}
+            }
         </style>
     </head>
     <body>
         <h2>✅ Key Claimed Successfully!</h2>
-        <div class="key">{key}</div>
+        <div class="key">{{ key }}</div>
         <p>⏳ Valid for 24 hours</p>
     </body>
     </html>
-    """
-    res = make_response(html)
-    res.set_cookie("token", "", max_age=0)
-    return res
+    """, key=key)
 
 @app.route("/owner_generate")
 def owner_generate():
