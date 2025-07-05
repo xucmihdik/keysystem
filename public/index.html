@@ -72,16 +72,17 @@
       padding: 12px 16px;
       margin: 20px 0;
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
       align-items: center;
+      gap: 10px;
       word-break: break-word;
     }
 
     .copy-icon {
-      width: 24px;
-      height: 24px;
+      width: 22px;
+      height: 22px;
       cursor: pointer;
-      margin-left: 12px;
+      filter: invert(0.1);
     }
 
     button {
@@ -188,18 +189,19 @@
         });
     }
 
-    function showKey(key, expiry, isOld) {
+    function showKey(rawKey, expiry, isOld) {
+      const key = `clark-${rawKey}`;
       const main = document.getElementById("main");
       main.innerHTML = `
         <h1>${isOld ? "🔁 Key already created" : "✅ Key Generated!"}</h1>
         <div class="key-box">
-          <span>clark-${key}</span>
-          <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLXdpZHRoPSIyIiBmaWxsPSJub25lIiB2aWV3Qm94PSIwIDAgMjQgMjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3QgeD0iOSIgeT0iOSIgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiByeD0iMiIvPjxyZWN0IHg9IjUiIHk9IjUiIHdpZHRoPSIxMCIgaGVpZ2h0PSIxMCIgcng9IjIiLz48L3N2Zz4=" 
-               alt="Copy" class="copy-icon" onclick="copyKey('clark-${key}')">
+          <span>${key}</span>
+          <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnL3N2ZyI+PHJlY3QgeD0iOSIgeT0iOSIgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiByeD0iMiIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjIiLz48cmVjdCB4PSI1IiB5PSI1IiB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIHJ4PSIyIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMiIvPjwvc3ZnPg==" 
+               alt="Copy" class="copy-icon" onclick="copyKey('${key}')">
         </div>
         <p>⏳ Valid until: ${new Date(expiry).toLocaleString()}</p>
       `;
-      copyKey(`clark-${key}`); // auto copy
+      copyKey(key); // Auto-copy on load
     }
 
     function copyKey(key) {
