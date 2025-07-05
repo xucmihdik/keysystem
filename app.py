@@ -67,11 +67,12 @@ def claim():
           position: absolute;
           border-radius: 50%;
           background: rgba(255, 255, 255, 0.25);
-          box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
-          animation: floatUp 20s linear infinite;
+          box-shadow: 0 0 25px rgba(255, 255, 255, 0.3);
+          animation: floatUp 18s linear infinite;
+          z-index: 1;
         }
         @keyframes floatUp {
-          0% { transform: translateY(100vh) scale(0.5); opacity: 0.6; }
+          0% { transform: translateY(100vh) scale(0.6); opacity: 0.7; }
           100% { transform: translateY(-10vh) scale(1.2); opacity: 0; }
         }
         .container {
@@ -83,7 +84,7 @@ def claim():
           width: 90%;
           max-width: 400px;
           text-align: center;
-          box-shadow: 0 0 25px rgba(0, 0, 0, 0.6);
+          box-shadow: 0 0 25px rgba(255, 255, 255, 0.2);
           animation: fadeIn 0.5s ease;
         }
         h1 {
@@ -136,15 +137,13 @@ def claim():
     </head>
     <body>
 
-      <!-- Bubbles -->
-      <div class="bubble" style="width: 60px; height: 60px; left: 5%; animation-delay: 0s;"></div>
-      <div class="bubble" style="width: 100px; height: 100px; left: 25%; animation-delay: 4s;"></div>
-      <div class="bubble" style="width: 80px; height: 80px; left: 50%; animation-delay: 2s;"></div>
-      <div class="bubble" style="width: 70px; height: 70px; left: 70%; animation-delay: 6s;"></div>
-      <div class="bubble" style="width: 90px; height: 90px; left: 85%; animation-delay: 1.5s;"></div>
-      <div class="bubble" style="width: 50px; height: 50px; left: 10%; animation-delay: 3s;"></div>
-      <div class="bubble" style="width: 65px; height: 65px; left: 40%; animation-delay: 5.5s;"></div>
-      <div class="bubble" style="width: 75px; height: 75px; left: 60%; animation-delay: 7s;"></div>
+      <!-- Bubbles (background) -->
+      <div class="bubble" style="width: 70px; height: 70px; left: 10%; animation-delay: 0s;"></div>
+      <div class="bubble" style="width: 90px; height: 90px; left: 25%; animation-delay: 2s;"></div>
+      <div class="bubble" style="width: 75px; height: 75px; left: 40%; animation-delay: 4s;"></div>
+      <div class="bubble" style="width: 60px; height: 60px; left: 55%; animation-delay: 6s;"></div>
+      <div class="bubble" style="width: 100px; height: 100px; left: 70%; animation-delay: 1s;"></div>
+      <div class="bubble" style="width: 80px; height: 80px; left: 85%; animation-delay: 3s;"></div>
 
       <div class="container">
         <h1>✅ Key Claimed Successfully!</h1>
