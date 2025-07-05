@@ -67,13 +67,14 @@
 
     .key-box {
       background: #fff;
-      color: #111;
+      color: #000;
       border-radius: 10px;
       padding: 12px 16px;
       margin: 20px 0;
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
       align-items: center;
+      gap: 12px;
       word-break: break-word;
     }
 
@@ -81,7 +82,7 @@
       width: 22px;
       height: 22px;
       cursor: pointer;
-      margin-left: 10px;
+      filter: invert(0.1);
     }
 
     button {
@@ -103,7 +104,7 @@
 
     .notification {
       position: fixed;
-      top: 20px;
+      top: 50px;
       left: 50%;
       transform: translateX(-50%);
       background: #fff;
@@ -113,14 +114,16 @@
       font-size: 0.95rem;
       box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
       z-index: 999;
-      opacity: 0;
-      animation: fadeInNotif 0.3s forwards;
+      animation: fadeInNotif 0.3s ease, fadeOutNotif 0.3s ease 2.7s forwards;
     }
 
     @keyframes fadeInNotif {
-      to {
-        opacity: 1;
-      }
+      from { opacity: 0; transform: translate(-50%, -10px); }
+      to { opacity: 1; transform: translate(-50%, 0); }
+    }
+
+    @keyframes fadeOutNotif {
+      to { opacity: 0; transform: translate(-50%, -10px); }
     }
 
     @keyframes fadeIn {
@@ -180,7 +183,6 @@
           if (data.has_key) {
             showKey(data.key, data.expires_at, true);
           } else {
-            // Redirect to Linkvertise
             window.location.href = "https://link-hub.net/1367787/WmEGaMKAKlRJ";
           }
         })
@@ -192,15 +194,14 @@
     function showKey(key, expiry, isOld) {
       const main = document.getElementById("main");
       main.innerHTML = `
-        <h1>${isOld ? "🔁 Key already created" : "✅ Key Generated!"}</h1>
+        <h1>${isOld ? "🔁 Key already created" : "✅ Key Claimed Successfully!"}</h1>
         <div class="key-box">
-          <span>${key}</span>
-          <img src="https://www.shutterstock.com/image-vector/copy-icon-260nw-1260468262.jpg" 
-               alt="Copy" class="copy-icon" onclick="copyKey('${key}')">
+          <span>clark-${key}</span>
+          <img src="https://cdn-icons-png.flaticon.com/512/60/60525.png" alt="Copy" class="copy-icon" onclick="copyKey('clark-${key}')">
         </div>
-        <p>⏳ Valid until: ${new Date(expiry).toLocaleString()}</p>
+        <p>⏳ Valid for 24 hours</p>
       `;
-      copyKey(key); // Auto copy
+      copyKey(`clark-${key}`);
     }
 
     function copyKey(key) {
