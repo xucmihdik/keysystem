@@ -148,7 +148,7 @@
 </head>
 <body>
 
-  <!-- Bubble background -->
+  <!-- Bubbles -->
   <div class="bubble" style="width: 60px; height: 60px; left: 5%; animation-delay: 0s;"></div>
   <div class="bubble" style="width: 100px; height: 100px; left: 25%; animation-delay: 4s;"></div>
   <div class="bubble" style="width: 80px; height: 80px; left: 50%; animation-delay: 2s;"></div>
@@ -187,7 +187,7 @@
           <span>${key}</span>
           <img src="https://cdn-icons-png.flaticon.com/512/1828/1828911.png" alt="Copy" class="copy-icon" onclick="copyKey('${key}')">
         </div>
-        <p>⏳ Valid until: ${new Date(expiry).toLocaleString()}</p>
+        <p style="color: white;">⏳ Valid until: ${new Date(expiry).toLocaleString()}</p>
       `;
     }
 
@@ -203,18 +203,6 @@
       notif.textContent = text;
       document.body.appendChild(notif);
       setTimeout(() => notif.remove(), 3000);
-    }
-
-    // Auto-generate key if user came from Linkvertise
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("ref") === "linkvertise") {
-      fetch("/generate_key")
-        .then(res => res.json())
-        .then(data => {
-          if (data.key) {
-            showKey(data.key, data.expires_at, data.status === "already");
-          }
-        });
     }
   </script>
 </body>
