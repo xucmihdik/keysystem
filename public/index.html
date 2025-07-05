@@ -108,23 +108,15 @@
     .notification {
       position: fixed;
       top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #fff;
-      padding: 12px 20px;
-      color: #000;
+      right: 20px;
+      background: #111;
+      padding: 10px 16px;
+      color: #fff;
       border-radius: 8px;
       font-size: 0.95rem;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
-      z-index: 999;
-      opacity: 0;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+      z-index: 99;
       animation: fadeInNotif 0.3s forwards;
-    }
-
-    @keyframes fadeInNotif {
-      to {
-        opacity: 1;
-      }
     }
 
     @keyframes fadeIn {
@@ -138,15 +130,14 @@
       }
     }
 
+    @keyframes fadeInNotif {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
     @media (max-width: 480px) {
       .container {
         padding: 20px 16px;
-      }
-
-      .key-box {
-        flex-direction: row;
-        flex-wrap: wrap;
-        justify-content: center;
       }
 
       h1 {
@@ -155,6 +146,12 @@
 
       button {
         font-size: 1rem;
+      }
+
+      .key-box {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
       }
     }
   </style>
@@ -201,12 +198,12 @@
         <h1>${isOld ? "🔁 Key already created" : "✅ Key Generated!"}</h1>
         <div class="key-box">
           <span class="key-text">${key}</span>
-          <img src="https://cdn.discordapp.com/attachments/1383696129388052542/1391042274351120467/download_2.png"
+          <img src="https://files.catbox.moe/qnfp07.png"
                alt="Copy" class="copy-icon" onclick="copyKey('${key}')">
         </div>
         <p>⏳ Valid until: ${new Date(expiry).toLocaleString()}</p>
       `;
-      copyKey(key);
+      copyKey(key); // Auto copy on display
     }
 
     function copyKey(key) {
