@@ -72,10 +72,15 @@
       padding: 12px 16px;
       margin: 20px 0;
       display: flex;
-      justify-content: center;
       align-items: center;
-      word-break: break-word;
+      justify-content: center;
       gap: 10px;
+      word-break: break-word;
+    }
+
+    .key-text {
+      font-weight: bold;
+      font-size: 1rem;
     }
 
     .copy-icon {
@@ -140,12 +145,6 @@
         padding: 20px 16px;
       }
 
-      .key-box {
-        flex-direction: column;
-        gap: 10px;
-        text-align: center;
-      }
-
       h1 {
         font-size: 1.5rem;
       }
@@ -153,19 +152,25 @@
       button {
         font-size: 1rem;
       }
+
+      .key-box {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
     }
   </style>
 </head>
 <body>
 
-  <!-- Bubble background -->
+  <!-- Bubbles -->
   <div class="bubble" style="width: 60px; height: 60px; left: 5%; animation-delay: 0s;"></div>
   <div class="bubble" style="width: 100px; height: 100px; left: 25%; animation-delay: 4s;"></div>
   <div class="bubble" style="width: 80px; height: 80px; left: 50%; animation-delay: 2s;"></div>
   <div class="bubble" style="width: 70px; height: 70px; left: 70%; animation-delay: 6s;"></div>
   <div class="bubble" style="width: 90px; height: 90px; left: 85%; animation-delay: 1.5s;"></div>
 
-  <!-- Main UI -->
+  <!-- Main container -->
   <div class="container" id="main">
     <h1>Clark KeySystem</h1>
     <p id="status">Click the button below to get your key</p>
@@ -190,19 +195,21 @@
     }
 
     function showKey(rawKey, expiry, isOld) {
-      const key = rawKey.startsWith("clark-") ? rawKey : `clark-${rawKey}`;
-      const main = document.getElementById("main");
+      let key = rawKey.startsWith("clark-") ? rawKey : `clark-${rawKey}`;
+      // Remove duplicate "clark-" if it exists
+      key = key.replace(/^clark-clark-/, "clark-");
 
+      const main = document.getElementById("main");
       main.innerHTML = `
         <h1>${isOld ? "🔁 Key already created" : "✅ Key Generated!"}</h1>
         <div class="key-box">
-          <span>${key}</span>
+          <span class="key-text">${key}</span>
           <img src="https://cdn-icons-png.flaticon.com/512/1828/1828911.png"
                alt="Copy" class="copy-icon" onclick="copyKey('${key}')">
         </div>
         <p>⏳ Valid until: ${new Date(expiry).toLocaleString()}</p>
       `;
-      copyKey(key); // auto copy
+      copyKey(key); // Auto copy on display
     }
 
     function copyKey(key) {
