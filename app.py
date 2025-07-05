@@ -55,23 +55,24 @@ def claim():
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <title>Key Claimed</title>
       <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         html, body {
           height: 100%; width: 100%;
           font-family: 'Segoe UI', sans-serif;
           background: linear-gradient(135deg, #000, #fff);
           display: flex; align-items: center; justify-content: center;
-          overflow: hidden; position: relative;
+          position: relative; overflow: hidden;
         }
         .bubble {
           position: absolute;
           border-radius: 50%;
-          background: rgba(255, 255, 255, 0.08);
+          background: rgba(255, 255, 255, 0.25);
+          box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
           animation: floatUp 20s linear infinite;
         }
         @keyframes floatUp {
-          0% { transform: translateY(0) scale(0.5); opacity: 0.3; }
-          100% { transform: translateY(-120vh) scale(1.2); opacity: 0; }
+          0% { transform: translateY(100vh) scale(0.5); opacity: 0.6; }
+          100% { transform: translateY(-10vh) scale(1.2); opacity: 0; }
         }
         .container {
           z-index: 2;
@@ -99,8 +100,8 @@ def claim():
           display: inline-flex;
           align-items: center;
           gap: 10px;
-          font-weight: bold;
           word-break: break-word;
+          font-weight: bold;
         }
         .copy-icon {
           width: 22px;
@@ -134,12 +135,16 @@ def claim():
       </style>
     </head>
     <body>
+
       <!-- Bubbles -->
-      <div class="bubble" style="width: 60px; height: 60px; left: 5%; top: 100vh; animation-delay: 0s;"></div>
-      <div class="bubble" style="width: 100px; height: 100px; left: 25%; top: 100vh; animation-delay: 4s;"></div>
-      <div class="bubble" style="width: 80px; height: 80px; left: 50%; top: 100vh; animation-delay: 2s;"></div>
-      <div class="bubble" style="width: 70px; height: 70px; left: 70%; top: 100vh; animation-delay: 6s;"></div>
-      <div class="bubble" style="width: 90px; height: 90px; left: 85%; top: 100vh; animation-delay: 1.5s;"></div>
+      <div class="bubble" style="width: 60px; height: 60px; left: 5%; animation-delay: 0s;"></div>
+      <div class="bubble" style="width: 100px; height: 100px; left: 25%; animation-delay: 4s;"></div>
+      <div class="bubble" style="width: 80px; height: 80px; left: 50%; animation-delay: 2s;"></div>
+      <div class="bubble" style="width: 70px; height: 70px; left: 70%; animation-delay: 6s;"></div>
+      <div class="bubble" style="width: 90px; height: 90px; left: 85%; animation-delay: 1.5s;"></div>
+      <div class="bubble" style="width: 50px; height: 50px; left: 10%; animation-delay: 3s;"></div>
+      <div class="bubble" style="width: 65px; height: 65px; left: 40%; animation-delay: 5.5s;"></div>
+      <div class="bubble" style="width: 75px; height: 75px; left: 60%; animation-delay: 7s;"></div>
 
       <div class="container">
         <h1>✅ Key Claimed Successfully!</h1>
