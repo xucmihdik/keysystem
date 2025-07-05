@@ -190,18 +190,19 @@
     }
 
     function showKey(rawKey, expiry, isOld) {
-      const key = `clark-${rawKey}`;
+      // Fix duplication: don't add clark- if it already starts with it
+      const key = rawKey.startsWith("clark-") ? rawKey : `clark-${rawKey}`;
       const main = document.getElementById("main");
       main.innerHTML = `
         <h1>${isOld ? "🔁 Key already created" : "✅ Key Generated!"}</h1>
         <div class="key-box">
           <span>${key}</span>
-          <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnL3N2ZyI+PHJlY3QgeD0iOSIgeT0iOSIgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiByeD0iMiIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjIiLz48cmVjdCB4PSI1IiB5PSI1IiB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIHJ4PSIyIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMiIvPjwvc3ZnPg==" 
+          <img src="https://cdn-icons-png.flaticon.com/512/1828/1828911.png" 
                alt="Copy" class="copy-icon" onclick="copyKey('${key}')">
         </div>
         <p>⏳ Valid until: ${new Date(expiry).toLocaleString()}</p>
       `;
-      copyKey(key); // Auto-copy on load
+      copyKey(key);
     }
 
     function copyKey(key) {
