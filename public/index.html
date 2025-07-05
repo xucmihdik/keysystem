@@ -31,14 +31,8 @@
     }
 
     @keyframes floatUp {
-      0% {
-        transform: translateY(100vh) scale(0.5);
-        opacity: 0.3;
-      }
-      100% {
-        transform: translateY(-10vh) scale(1.2);
-        opacity: 0;
-      }
+      0% { transform: translateY(100vh) scale(0.5); opacity: 0.3; }
+      100% { transform: translateY(-10vh) scale(1.2); opacity: 0; }
     }
 
     .container {
@@ -72,16 +66,19 @@
       padding: 12px 16px;
       margin: 20px 0;
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
       align-items: center;
+      gap: 12px;
       word-break: break-word;
+      font-weight: bold;
+      font-size: 1rem;
     }
 
     .copy-icon {
-      width: 22px;
-      height: 22px;
+      width: 24px;
+      height: 24px;
       cursor: pointer;
-      filter: invert(0.1);
+      filter: invert(0);
     }
 
     button {
@@ -104,25 +101,26 @@
     .notification {
       position: fixed;
       top: 20px;
-      right: 20px;
-      background: #111;
-      padding: 10px 16px;
-      color: #fff;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #fff;
+      padding: 12px 20px;
+      color: #000;
       border-radius: 8px;
       font-size: 0.95rem;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
-      z-index: 99;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      opacity: 0;
+      animation: fadeInNotif 0.3s forwards;
+    }
+
+    @keyframes fadeInNotif {
+      to { opacity: 1; }
     }
 
     @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     @media (max-width: 480px) {
@@ -131,9 +129,8 @@
       }
 
       .key-box {
-        flex-direction: column;
-        gap: 10px;
-        text-align: center;
+        flex-direction: row;
+        justify-content: center;
       }
 
       h1 {
@@ -171,7 +168,6 @@
           if (data.has_key) {
             showKey(data.key, data.expires_at, true);
           } else {
-            // Go to Linkvertise (NOT get_token directly)
             window.location.href = "https://link-hub.net/1367787/WmEGaMKAKlRJ";
           }
         })
@@ -186,7 +182,7 @@
         <h1>${isOld ? "🔁 Key already created" : "✅ Key Generated!"}</h1>
         <div class="key-box">
           <span>${key}</span>
-          <img src="https://cdn-icons-png.flaticon.com/512/1828/1828911.png" alt="Copy" class="copy-icon" onclick="copyKey('${key}')">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Copy_icon_black.svg/2048px-Copy_icon_black.svg.png" alt="Copy" class="copy-icon" onclick="copyKey('${key}')">
         </div>
         <p>⏳ Valid until: ${new Date(expiry).toLocaleString()}</p>
       `;
