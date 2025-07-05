@@ -196,7 +196,6 @@
 
     function showKey(rawKey, expiry, isOld) {
       let key = rawKey.startsWith("clark-") ? rawKey : `clark-${rawKey}`;
-      // Remove duplicate "clark-" if it exists
       key = key.replace(/^clark-clark-/, "clark-");
 
       const main = document.getElementById("main");
@@ -204,12 +203,12 @@
         <h1>${isOld ? "🔁 Key already created" : "✅ Key Generated!"}</h1>
         <div class="key-box">
           <span class="key-text">${key}</span>
-          <img src="https://cdn-icons-png.flaticon.com/512/1828/1828911.png"
+          <img src="https://cdn-icons-png.flaticon.com/512/753/753345.png"
                alt="Copy" class="copy-icon" onclick="copyKey('${key}')">
         </div>
         <p>⏳ Valid until: ${new Date(expiry).toLocaleString()}</p>
       `;
-      copyKey(key); // Auto copy on display
+      copyKey(key); // Auto copy
     }
 
     function copyKey(key) {
