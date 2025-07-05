@@ -53,28 +53,39 @@ def claim():
     <head>
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
-      <title>Key Claimed</title>
+      <title>Clark KeySystem</title>
       <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * {
+          box-sizing: border-box;
+          margin: 0;
+          padding: 0;
+        }
         html, body {
-          height: 100%; width: 100%;
+          height: 100%;
+          width: 100%;
           font-family: 'Segoe UI', sans-serif;
           background: linear-gradient(135deg, #000, #fff);
-          display: flex; align-items: center; justify-content: center;
-          position: relative; overflow: hidden;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          overflow: hidden;
         }
         .bubble {
           position: absolute;
-          top: 100vh;
           border-radius: 50%;
-          background: radial-gradient(circle, rgba(255,255,255,0.6), rgba(255,255,255,0.1));
+          background: rgba(255, 255, 255, 0.08);
           animation: floatUp 20s linear infinite;
-          box-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
-          filter: blur(1px);
         }
         @keyframes floatUp {
-          0% { transform: translateY(0) scale(0.6); opacity: 0.3; }
-          100% { transform: translateY(-110vh) scale(1.2); opacity: 0; }
+          0% {
+            transform: translateY(100vh) scale(0.5);
+            opacity: 0.3;
+          }
+          100% {
+            transform: translateY(-10vh) scale(1.2);
+            opacity: 0;
+          }
         }
         .container {
           z-index: 2;
@@ -89,9 +100,13 @@ def claim():
           animation: fadeIn 0.5s ease;
         }
         h1 {
-          font-size: 1.6rem;
+          font-size: 1.7rem;
           margin-bottom: 16px;
           color: #fff;
+        }
+        p {
+          color: #ccc;
+          margin-top: 10px;
         }
         .key-box {
           background: #fff;
@@ -109,9 +124,6 @@ def claim():
           width: 22px;
           height: 22px;
           cursor: pointer;
-        }
-        p {
-          color: #ccc;
         }
         .notification {
           position: fixed;
@@ -137,7 +149,6 @@ def claim():
       </style>
     </head>
     <body>
-
       <!-- Bubbles -->
       <div class="bubble" style="width: 60px; height: 60px; left: 5%; animation-delay: 0s;"></div>
       <div class="bubble" style="width: 100px; height: 100px; left: 25%; animation-delay: 4s;"></div>
