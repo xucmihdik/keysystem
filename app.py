@@ -1,14 +1,12 @@
 from flask import Flask, request, jsonify, send_from_directory, render_template_string, redirect
 from keys import KEYS, USED_IPS, generate_key
-from datetime import datetime, timedelta
+from datetime import datetime
 import uuid
-import os
 
 app = Flask(__name__, static_folder="public")
 
 TOKENS = {}
-SECRET_KEY = "p"  # You can change this to a secure string
-TOKEN_TIMEOUT = 300  # 5 minutes in seconds
+SECRET_KEY = "p"  # Your owner secret
 
 @app.route("/")
 def home():
@@ -19,17 +17,18 @@ def check_key_status():
     ip = request.remote_addr
     if ip in USED_IPS:
         key = USED_IPS[ip]
-        return jsonify({ "has_key": True, "key": key, "expires_at": KEYS[key] })
-    return jsonify({ "has_key": False })
+        return jsonify({"has_key": True, "key": key, "expires_at": KEYS[key]})
+    return jsonify({"has_key": False})
 
 @app.route("/get_token")
 def get_token():
+    referer = request.headers.get("Referer", "")
+    if "linkvertise.com" not in referer.lower():
+        return "❌ Access denied. Please complete Linkvertise first.", 403
+
     ip = request.remote_addr
     token = uuid.uuid4().hex[:24]
-    TOKENS[token] = {
-        "ip": ip,
-        "created_at": datetime.utcnow()
-    }
+    TOKENS[token] = ip
     return redirect(f"/claim?token={token}")
 
 @app.route("/claim")
@@ -37,17 +36,8 @@ def claim():
     token = request.args.get("token")
     ip = request.remote_addr
 
-    token_data = TOKENS.get(token)
-
-    if not token_data:
-        return "❌ Invalid token", 403
-
-    if token_data["ip"] != ip:
-        return "❌ Token IP mismatch", 403
-
-    if datetime.utcnow() - token_data["created_at"] > timedelta(seconds=TOKEN_TIMEOUT):
-        del TOKENS[token]
-        return "❌ Token expired", 403
+    if not token or token not in TOKENS or TOKENS[token] != ip:
+        return "Invalid token or IP mismatch", 403
 
     if ip in USED_IPS:
         key = USED_IPS[ip]
@@ -95,27 +85,30 @@ def claim():
 def owner_generate():
     secret = request.args.get("secret")
     ip = request.remote_addr
+
     if secret != SECRET_KEY:
-        return jsonify({ "error": "Unauthorized" }), 403
+        return jsonify({"error": "Unauthorized"}), 403
 
     if ip in USED_IPS:
         key = USED_IPS[ip]
     else:
         key, _ = generate_key(ip)
 
-    return jsonify({ "key": key, "expires_at": KEYS[key], "status": "owner" })
+    return jsonify({"key": key, "expires_at": KEYS[key], "status": "owner"})
 
 @app.route("/validate_key")
 def validate_key():
     key = request.args.get("key")
     if key in KEYS and datetime.fromisoformat(KEYS[key]) > datetime.utcnow():
-        return jsonify({ "valid": True, "expires_at": KEYS[key] })
-    return jsonify({ "valid": False }), 404
+        return jsonify({"valid": True, "expires_at": KEYS[key]})
+    return jsonify({"valid": False}), 404
 
 @app.route("/<path:path>")
 def static_file(path):
     return send_from_directory("public", path)
 
+# Required for Render.com deployment
+import os
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port)
