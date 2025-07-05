@@ -190,19 +190,19 @@
     }
 
     function showKey(rawKey, expiry, isOld) {
-      // Prevent double "clark-" if backend already prepended it
       const key = rawKey.startsWith("clark-") ? rawKey : `clark-${rawKey}`;
       const main = document.getElementById("main");
+
       main.innerHTML = `
         <h1>${isOld ? "🔁 Key already created" : "✅ Key Generated!"}</h1>
         <div class="key-box">
           <span>${key}</span>
-          <img src="https://cdn-icons-png.flaticon.com/512/1828/1828911.png" 
+          <img src="https://cdn-icons-png.flaticon.com/512/1828/1828911.png"
                alt="Copy" class="copy-icon" onclick="copyKey('${key}')">
         </div>
         <p>⏳ Valid until: ${new Date(expiry).toLocaleString()}</p>
       `;
-      copyKey(key);
+      copyKey(key); // auto copy
     }
 
     function copyKey(key) {
