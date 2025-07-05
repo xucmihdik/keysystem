@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -143,18 +143,18 @@
         padding: 20px 16px;
       }
 
+      .key-box {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
       h1 {
         font-size: 1.5rem;
       }
 
       button {
         font-size: 1rem;
-      }
-
-      .key-box {
-        flex-direction: row;
-        flex-wrap: wrap;
-        justify-content: center;
       }
     }
   </style>
@@ -201,12 +201,12 @@
         <h1>${isOld ? "🔁 Key already created" : "✅ Key Generated!"}</h1>
         <div class="key-box">
           <span class="key-text">${key}</span>
-          <img src="https://cdn.discordapp.com/attachments/1383696129388052542/1391042274351120467/download_2.png?ex=686a7492&is=68692312&hm=0b7c2bcebcd671f920f42f4177e5087317f5ff4260b819784fbb832e6e721534&"
+          <img src="https://cdn.discordapp.com/attachments/1383696129388052542/1391042274351120467/download_2.png"
                alt="Copy" class="copy-icon" onclick="copyKey('${key}')">
         </div>
         <p>⏳ Valid until: ${new Date(expiry).toLocaleString()}</p>
       `;
-      copyKey(key); // Auto copy
+      copyKey(key);
     }
 
     function copyKey(key) {
