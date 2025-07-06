@@ -78,6 +78,7 @@ def validate_key():
 @app.route("/loader")
 def loader():
     user_agent = request.headers.get("User-Agent", "").lower()
+
     if "roblox" not in user_agent:
         return "-- ❌ Unauthorized access", 403
 
@@ -87,10 +88,12 @@ def loader():
 
     key = USED_IPS[device_id]
     expiry = KEYS.get(key)
-    if not expiry or datetime.fromisoformat(expiry) < datetime.utcnow():
-        return "-- ⏳ Your key has expired. Please get a new key.", 403
+
+    if not key or not expiry or datetime.fromisoformat(expiry) < datetime.utcnow():
+        return "-- ❌ Invalid or expired key. Access denied.", 403
 
     lua_script = '''
+-- Roblox GUI KeySystem by Clark
 local HttpService = game:GetService("HttpService")
 local TweenService = game:GetService("TweenService")
 local request = (syn and syn.request) or (http and http.request) or (http_request) or request
