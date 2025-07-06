@@ -159,7 +159,7 @@
         </div>
         <p>⏳ Valid until: ${new Date(expiry).toLocaleString()}</p>
       `;
-      copyKey(key); // auto copy
+      copyKey(key);
     }
 
     function copyKey(key) {
@@ -176,7 +176,7 @@
       setTimeout(() => notif.remove(), 3000);
     }
 
-    // Background Particles (Option 3, black & white style)
+    // Background Particles
     const canvas = document.getElementById("bgCanvas");
     const ctx = canvas.getContext("2d");
     canvas.width = window.innerWidth;
@@ -216,7 +216,15 @@
       canvas.height = window.innerHeight;
     });
 
-    // Auto show key from URL (?key=...)
+    // Reset status text when returning from Linkvertise
+    window.addEventListener("pageshow", () => {
+      const statusEl = document.getElementById("status");
+      if (statusEl && statusEl.textContent.includes("Checking key status")) {
+        statusEl.textContent = "Click the button below to get your key";
+      }
+    });
+
+    // Auto show key if key param is in URL
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has("key")) {
       showKey(urlParams.get("key"), new Date(Date.now() + 86400000), false);
