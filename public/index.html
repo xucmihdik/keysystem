@@ -14,47 +14,38 @@
     html, body {
       height: 100%;
       width: 100%;
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #000, #fff);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
       overflow: hidden;
+      font-family: 'Segoe UI', sans-serif;
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
     }
 
-    .bubble {
+    canvas {
       position: absolute;
-      top: 100vh;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(255,255,255,0.7), rgba(255,255,255,0.2));
-      animation: floatUp 20s linear infinite;
-      box-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
-      backdrop-filter: blur(3px);
-    }
-
-    @keyframes floatUp {
-      0% {
-        transform: translateY(0) scale(0.5);
-        opacity: 0.4;
-      }
-      100% {
-        transform: translateY(-120vh) scale(1.2);
-        opacity: 0;
-      }
+      top: 0;
+      left: 0;
+      z-index: 0;
     }
 
     .container {
       z-index: 2;
-      background: rgba(0, 0, 0, 0.85);
-      border: 2px solid #fff;
+      background: rgba(0, 0, 0, 0.75);
       border-radius: 16px;
       padding: 24px 20px;
       width: 90%;
       max-width: 400px;
       text-align: center;
-      box-shadow: 0 0 25px rgba(0, 0, 0, 0.6);
-      animation: fadeIn 0.5s ease;
+      border: 2px solid #fff;
+      box-shadow: 0 0 30px rgba(255, 255, 255, 0.6);
+      animation: popup 0.5s ease;
+    }
+
+    @keyframes popup {
+      from { opacity: 0; transform: scale(0.8); }
+      to { opacity: 1; transform: scale(1); }
     }
 
     h1 {
@@ -70,7 +61,7 @@
 
     .key-box {
       background: #fff;
-      color: #111;
+      color: #000;
       border-radius: 10px;
       padding: 12px 16px;
       margin: 20px 0;
@@ -122,53 +113,15 @@
       animation: fadeInNotif 0.3s forwards;
     }
 
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
     @keyframes fadeInNotif {
       from { opacity: 0; }
       to { opacity: 1; }
     }
-
-    @media (max-width: 480px) {
-      .container {
-        padding: 20px 16px;
-      }
-
-      h1 {
-        font-size: 1.5rem;
-      }
-
-      button {
-        font-size: 1rem;
-      }
-
-      .key-box {
-        flex-direction: row;
-        flex-wrap: wrap;
-        justify-content: center;
-      }
-    }
   </style>
 </head>
 <body>
+  <canvas id="bgCanvas"></canvas>
 
-  <!-- Bubbles -->
-  <div class="bubble" style="width: 60px; height: 60px; left: 5%; animation-delay: 0s;"></div>
-  <div class="bubble" style="width: 100px; height: 100px; left: 25%; animation-delay: 4s;"></div>
-  <div class="bubble" style="width: 80px; height: 80px; left: 50%; animation-delay: 2s;"></div>
-  <div class="bubble" style="width: 70px; height: 70px; left: 70%; animation-delay: 6s;"></div>
-  <div class="bubble" style="width: 90px; height: 90px; left: 85%; animation-delay: 1.5s;"></div>
-
-  <!-- Main UI -->
   <div class="container" id="main">
     <h1>Clark KeySystem</h1>
     <p id="status">Click the button below to get your key</p>
@@ -206,7 +159,7 @@
         </div>
         <p>⏳ Valid until: ${new Date(expiry).toLocaleString()}</p>
       `;
-      copyKey(key); // Auto copy
+      copyKey(key); // auto copy
     }
 
     function copyKey(key) {
@@ -221,6 +174,52 @@
       notif.textContent = text;
       document.body.appendChild(notif);
       setTimeout(() => notif.remove(), 3000);
+    }
+
+    // Background Particles (Option 3, black & white style)
+    const canvas = document.getElementById("bgCanvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const particles = Array.from({ length: 60 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      size: Math.random() * 2 + 1,
+      speedX: (Math.random() - 0.5) * 0.5,
+      speedY: (Math.random() - 0.5) * 0.5,
+      color: Math.random() > 0.5 ? '#fff' : '#000'
+    }));
+
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let p of particles) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+        p.x += p.speedX;
+        p.y += p.speedY;
+
+        // Wrap around
+        if (p.x < 0) p.x = canvas.width;
+        if (p.x > canvas.width) p.x = 0;
+        if (p.y < 0) p.y = canvas.height;
+        if (p.y > canvas.height) p.y = 0;
+      }
+      requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    window.addEventListener("resize", () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+
+    // Auto show key from URL (?key=...)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has("key")) {
+      showKey(urlParams.get("key"), new Date(Date.now() + 86400000), false);
     }
   </script>
 </body>
