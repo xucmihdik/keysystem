@@ -30,7 +30,7 @@ def check_key_status():
 def get_token():
     referer = request.headers.get("Referer", "")
     if "linkvertise.com" not in referer.lower():
-        return "❌ Access denied. Please complete Linkvertise first.", 403
+        return "", 403
 
     device_id = get_device_id()
     token = uuid.uuid4().hex[:24]
@@ -43,7 +43,7 @@ def claim():
     device_id = get_device_id()
 
     if not token or token not in TOKENS or TOKENS[token] != device_id:
-        return "Invalid token or device mismatch", 403
+        return "", 403
 
     if device_id in USED_IPS:
         key = USED_IPS[device_id]
@@ -79,26 +79,22 @@ def validate_key():
 def loader():
     user_agent = request.headers.get("User-Agent", "").lower()
 
+    # Block browser and non-Roblox requests
     if "roblox" not in user_agent:
-        return "-- ❌ Unauthorized access", 403
+        return "", 403
 
-    device_id = get_device_id()
-    if device_id not in USED_IPS:
-        return "-- 🔒 Please verify before running this script.", 403
-
-    key = USED_IPS[device_id]
-    expiry = KEYS.get(key)
-
-    if not key or not expiry or datetime.fromisoformat(expiry) < datetime.utcnow():
-        return "-- ❌ Invalid or expired key. Access denied.", 403
-
+    # Serve Lua code (always, no key check)
     lua_script = '''
 -- Roblox GUI KeySystem by Clark
+-- Your GUI Lua code goes here
+print("✅ Clark Loader Executed")
+-- Add your full GUI code here...
 local HttpService = game:GetService("HttpService")
 local TweenService = game:GetService("TweenService")
 local request = (syn and syn.request) or (http and http.request) or (http_request) or request
 if not request then return warn("❌ Your executor does not support HTTP requests.") end
 
+-- GUI Setup
 local gui = Instance.new("ScreenGui")
 gui.Name = "ClarkKeySystem"
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
@@ -162,10 +158,12 @@ checkBtn.Font = Enum.Font.Gotham
 checkBtn.TextSize = 15
 Instance.new("UICorner", checkBtn).CornerRadius = UDim.new(0, 8)
 
+-- Pop-up animation
 TweenService:Create(main, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
 	Size = UDim2.new(0, 300, 0, 200)
 }):Play()
 
+-- Notification
 local function notify(text)
 	local notif = Instance.new("TextLabel", gui)
 	notif.Size = UDim2.new(0, 260, 0, 28)
@@ -187,6 +185,7 @@ local function notify(text)
 	notif:Destroy()
 end
 
+-- Exit Animation (old scale-down pop effect)
 local function exitGUI()
 	local shrink = TweenService:Create(main, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
 		Size = UDim2.new(0, 0, 0, 0),
@@ -197,6 +196,7 @@ local function exitGUI()
 	gui:Destroy()
 end
 
+-- Key Validation
 local function validateKey()
 	local key = input.Text
 	if key == "" then return notify("⚠️ Please enter a key.") end
@@ -229,6 +229,7 @@ local function validateKey()
 	end
 end
 
+-- Get Key Button Action
 getBtn.MouseButton1Click:Connect(function()
 	setclipboard("https://clark-keysystem.onrender.com")
 	notify("🔗 Key link copied to clipboard!")
