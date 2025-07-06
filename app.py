@@ -9,15 +9,20 @@ app = Flask(__name__, static_folder="public")
 TOKENS = {}
 SECRET_KEY = "p"
 
+def get_device_id():
+    ip = request.remote_addr
+    user_agent = request.headers.get("User-Agent", "")
+    return ip + user_agent
+
 @app.route("/")
 def home():
     return send_from_directory("public", "index.html")
 
 @app.route("/check_key_status")
 def check_key_status():
-    ip = request.remote_addr
-    if ip in USED_IPS:
-        key = USED_IPS[ip]
+    device_id = get_device_id()
+    if device_id in USED_IPS:
+        key = USED_IPS[device_id]
         return jsonify({"has_key": True, "key": key, "expires_at": KEYS[key]})
     return jsonify({"has_key": False})
 
@@ -27,23 +32,23 @@ def get_token():
     if "linkvertise.com" not in referer.lower():
         return "❌ Access denied. Please complete Linkvertise first.", 403
 
-    ip = request.remote_addr
+    device_id = get_device_id()
     token = uuid.uuid4().hex[:24]
-    TOKENS[token] = ip
+    TOKENS[token] = device_id
     return redirect(f"/claim?token={token}")
 
 @app.route("/claim")
 def claim():
     token = request.args.get("token")
-    ip = request.remote_addr
+    device_id = get_device_id()
 
-    if not token or token not in TOKENS or TOKENS[token] != ip:
-        return "Invalid token or IP mismatch", 403
+    if not token or token not in TOKENS or TOKENS[token] != device_id:
+        return "Invalid token or device mismatch", 403
 
-    if ip in USED_IPS:
-        key = USED_IPS[ip]
+    if device_id in USED_IPS:
+        key = USED_IPS[device_id]
     else:
-        key, _ = generate_key(ip)
+        key, _ = generate_key(device_id)
 
     del TOKENS[token]
 
@@ -137,7 +142,6 @@ def claim():
     </head>
     <body>
 
-      <!-- Bubbles (background) -->
       <div class="bubble" style="width: 70px; height: 70px; left: 10%; animation-delay: 0s;"></div>
       <div class="bubble" style="width: 90px; height: 90px; left: 25%; animation-delay: 2s;"></div>
       <div class="bubble" style="width: 75px; height: 75px; left: 40%; animation-delay: 4s;"></div>
@@ -178,15 +182,15 @@ def claim():
 @app.route("/owner_generate")
 def owner_generate():
     secret = request.args.get("secret")
-    ip = request.remote_addr
+    device_id = get_device_id()
 
     if secret != SECRET_KEY:
         return jsonify({"error": "Unauthorized"}), 403
 
-    if ip in USED_IPS:
-        key = USED_IPS[ip]
+    if device_id in USED_IPS:
+        key = USED_IPS[device_id]
     else:
-        key, _ = generate_key(ip)
+        key, _ = generate_key(device_id)
 
     return jsonify({"key": key, "expires_at": KEYS[key], "status": "owner"})
 
