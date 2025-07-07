@@ -8,14 +8,14 @@ app = Flask(__name__, static_folder="public")
 TOKENS = {}
 SECRET_KEY = "p"
 
+@app.route("/")
+def home():
+    return send_from_directory("public", "index.html")
+
 def get_device_id():
     ip = request.remote_addr
     user_agent = request.headers.get("User-Agent", "")
     return ip + user_agent
-
-@app.route("/")
-def home():
-    return send_from_directory("public", "index.html")
 
 @app.route("/check_key_status")
 def check_key_status():
@@ -70,23 +70,21 @@ def validate_key():
 @app.route("/loader")
 def loader():
     user_agent = request.headers.get("User-Agent", "").lower()
-    forwarded = request.headers.get("X-Forwarded-For", "")
     origin = request.headers.get("Origin", "")
     referer = request.headers.get("Referer", "")
 
     browser_keywords = ["mozilla", "chrome", "safari", "firefox", "edge", "curl", "wget", "postman", "python"]
-
-    if any(b in user_agent for b in browser_keywords):
+    if any(keyword in user_agent for keyword in browser_keywords):
         return "Access Denied (Browser)", 403
-    if forwarded or origin or referer:
+
+    if origin or referer:
         return "Access Denied (Headers)", 403
 
-    try:
-        with open("gui.lua", "r") as f:
-            lua_code = f.read()
-        return Response(lua_code, mimetype="text/plain")
-    except FileNotFoundError:
-        return "gui.lua not found", 500
+    if not os.path.exists("gui.lua"):
+        return "Missing GUI script", 404
+
+    with open("gui.lua", "r", encoding="utf-8") as f:
+        return Response(f.read(), mimetype="text/plain")
 
 @app.route("/<path:path>")
 def static_file(path):
