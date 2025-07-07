@@ -111,8 +111,7 @@ local function validateKey()
 			Url = "https://clark-keysystem.onrender.com/validate_key?key=" .. key,
 			Method = "GET",
 			Headers = {
-				["Content-Type"] = "application/json",
-				["X-Secret"] = "123pogiako"
+				["Content-Type"] = "application/json"
 			}
 		})
 	end)
