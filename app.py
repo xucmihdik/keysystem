@@ -7,10 +7,9 @@ import os
 app = Flask(__name__, static_folder="public")
 TOKENS = {}
 SECRET_KEY = "p"
-LOADER_SECRET = "123pogiako"
 
 def get_device_id():
-    ip = request.remote_addr or "0.0.0.0"
+    ip = request.remote_addr
     user_agent = request.headers.get("User-Agent", "")
     return ip + user_agent
 
@@ -76,20 +75,18 @@ def loader():
     referer = request.headers.get("Referer", "")
 
     browser_keywords = ["mozilla", "chrome", "safari", "firefox", "edge", "curl", "wget", "postman", "python"]
-    executor_keywords = ["synapse", "krnl", "delta", "fluxus", "scriptware", "electron", "roblox"]
 
     if any(b in user_agent for b in browser_keywords):
         return "Access Denied (Browser)", 403
     if forwarded or origin or referer:
         return "Access Denied (Headers)", 403
-    if user_agent == "" or any(e in user_agent for e in executor_keywords):
-        try:
-            with open("gui.lua", "r") as f:
-                lua_code = f.read()
-            return Response(lua_code, mimetype="text/plain")
-        except FileNotFoundError:
-            return "gui.lua not found", 500
-    return "Access Denied (Unknown Executor)", 403
+
+    try:
+        with open("gui.lua", "r") as f:
+            lua_code = f.read()
+        return Response(lua_code, mimetype="text/plain")
+    except FileNotFoundError:
+        return "gui.lua not found", 500
 
 @app.route("/<path:path>")
 def static_file(path):
