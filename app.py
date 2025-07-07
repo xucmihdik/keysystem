@@ -5,7 +5,6 @@ import uuid
 import os
 
 app = Flask(__name__, static_folder="public")
-
 TOKENS = {}
 SECRET_KEY = "p"
 LOADER_SECRET = "123pogiako"
@@ -71,10 +70,6 @@ def validate_key():
 
 @app.route("/loader")
 def loader():
-    secret_header = request.headers.get("X-Secret")
-    if secret_header != LOADER_SECRET:
-        return "Access Denied", 403
-
     user_agent = request.headers.get("User-Agent", "").lower()
     forwarded = request.headers.get("X-Forwarded-For")
     origin = request.headers.get("Origin", "")
@@ -86,8 +81,12 @@ def loader():
     if forwarded or origin or referer:
         return "Access Denied (Headers)", 403
 
-    with open("gui.lua", "r", encoding="utf-8") as f:
-        return Response(f.read(), mimetype="text/plain")
+    try:
+        with open("gui.lua", "r", encoding="utf-8") as f:
+            lua_code = f.read()
+        return Response(lua_code, mimetype="text/plain")
+    except:
+        return "GUI not found.", 500
 
 @app.route("/<path:path>")
 def static_file(path):
