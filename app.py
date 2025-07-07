@@ -70,13 +70,13 @@ def validate_key():
 @app.route("/loader")
 def loader():
     user_agent = request.headers.get("User-Agent", "").lower()
-    blocked_agents = [
-        "mozilla", "chrome", "safari", "edge", "firefox",
-        "curl", "wget", "postman", "python", "java", "libhttp",
-        "httpclient", "electron", "node", "axios", "windows nt"
+
+    browser_keywords = [
+        "mozilla", "chrome", "safari", "firefox", "edge",
+        "opera", "gecko", "electron", "trident"
     ]
 
-    if any(agent in user_agent for agent in blocked_agents):
+    if any(keyword in user_agent for keyword in browser_keywords):
         return Response(
             "<h1>Access Denied</h1><p>This endpoint is restricted.</p>",
             mimetype="text/html",
