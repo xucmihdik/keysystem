@@ -70,9 +70,11 @@ def validate_key():
 @app.route("/loader")
 def loader():
     user_agent = request.headers.get("User-Agent", "").lower()
-    browser_indicators = ["mozilla", "chrome", "safari", "edge", "firefox", "curl", "wget", "postman", "python"]
-
-    if any(b in user_agent for b in browser_indicators):
+    browser_indicators = [
+        "mozilla", "chrome", "safari", "edge", "firefox",
+        "curl", "wget", "postman", "python", "java"
+    ]
+    if any(indicator in user_agent for indicator in browser_indicators):
         return "403 Forbidden (Browser not allowed)", 403
 
     if not os.path.exists("gui.lua"):
