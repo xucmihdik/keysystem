@@ -81,12 +81,7 @@ def loader():
     ]
 
     if not any(agent in user_agent for agent in allowed_agents):
-        print("Blocked User-Agent:", user_agent)
-        return Response(
-            "<h1>Access Denied</h1><p>This endpoint is restricted to Roblox exploit environments only.</p>",
-            mimetype="text/html",
-            status=403
-        )
+        return Response("ACCESS DENIED", mimetype="text/plain", status=403)
 
     if not os.path.exists("gui.lua"):
         return "GUI file not found", 404
