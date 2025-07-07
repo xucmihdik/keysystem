@@ -77,20 +77,16 @@ def validate_key():
 
 @app.route("/loader")
 def loader():
-    user_agent = request.headers.get("User-Agent", "").lower()
+    ua = request.headers.get("User-Agent", "").lower()
     forwarded = request.headers.get("X-Forwarded-For")
     referer = request.headers.get("Referer", "")
     origin = request.headers.get("Origin", "")
 
-    block_keywords = ["mozilla", "chrome", "safari", "curl", "postman", "python", "wget"]
-    if any(k in user_agent for k in block_keywords):
-        return "Access denied (UA)", 403
-    if forwarded:
-        return "Access denied (Proxy Detected)", 403
-    if referer or origin:
-        return "Access denied (Referrer/Origin set)", 403
+    block = ["mozilla", "chrome", "safari", "edge", "curl", "postman", "http", "python", "wget"]
+    if any(b in ua for b in block) or forwarded or referer or origin:
+        return "Access Denied", 403
 
-    lua_script = '''
+    lua_script = '''-- Clark KeySystem GUI
 local HttpService = game:GetService("HttpService")
 local TweenService = game:GetService("TweenService")
 local request = (syn and syn.request) or (http and http.request) or (http_request) or request
@@ -233,7 +229,6 @@ end)
 
 checkBtn.MouseButton1Click:Connect(validateKey)
 '''
-
     return Response(lua_script, mimetype="text/plain")
 
 @app.route("/<path:path>")
