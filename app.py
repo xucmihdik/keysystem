@@ -5,7 +5,6 @@ import uuid
 import os
 
 app = Flask(__name__, static_folder="public")
-
 TOKENS = {}
 SECRET_KEY = "p"
 
@@ -31,7 +30,6 @@ def get_token():
     referer = request.headers.get("Referer", "")
     if "linkvertise.com" not in referer.lower():
         return "", 403
-
     device_id = get_device_id()
     token = uuid.uuid4().hex[:24]
     TOKENS[token] = device_id
@@ -41,15 +39,12 @@ def get_token():
 def claim():
     token = request.args.get("token")
     device_id = get_device_id()
-
     if not token or token not in TOKENS or TOKENS[token] != device_id:
         return "", 403
-
     if device_id in USED_IPS:
         key = USED_IPS[device_id]
     else:
         key, _ = generate_key(device_id)
-
     del TOKENS[token]
     return redirect(f"/?key={key}")
 
@@ -57,15 +52,12 @@ def claim():
 def owner_generate():
     secret = request.args.get("secret")
     device_id = get_device_id()
-
     if secret != SECRET_KEY:
         return jsonify({"error": "Unauthorized"}), 403
-
     if device_id in USED_IPS:
         key = USED_IPS[device_id]
     else:
         key, _ = generate_key(device_id)
-
     return jsonify({"key": key, "expires_at": KEYS[key], "status": "owner"})
 
 @app.route("/validate_key")
@@ -77,16 +69,21 @@ def validate_key():
 
 @app.route("/loader")
 def loader():
-    ua = request.headers.get("User-Agent", "").lower()
+    user_agent = request.headers.get("User-Agent", "").lower()
     forwarded = request.headers.get("X-Forwarded-For")
     referer = request.headers.get("Referer", "")
     origin = request.headers.get("Origin", "")
 
-    block = ["mozilla", "chrome", "safari", "edge", "curl", "postman", "http", "python", "wget"]
-    if any(b in ua for b in block) or forwarded or referer or origin:
-        return "Access Denied", 403
+    block_keywords = ["mozilla", "chrome", "safari", "curl", "postman", "python", "wget"]
+    if any(k in user_agent for k in block_keywords):
+        return "Access denied (UA)", 403
+    if forwarded:
+        return "Access denied (Proxy Detected)", 403
+    if referer or origin:
+        return "Access denied (Referrer/Origin set)", 403
 
-    lua_script = '''-- Clark KeySystem GUI
+    # LUA GUI PAYLOAD (SERVED TO LOADSTRING)
+    lua_gui = '''-- Clark KeySystem GUI
 local HttpService = game:GetService("HttpService")
 local TweenService = game:GetService("TweenService")
 local request = (syn and syn.request) or (http and http.request) or (http_request) or request
@@ -172,7 +169,6 @@ local function notify(text)
 	notif.BackgroundTransparency = 1
 	notif.ZIndex = 999
 	Instance.new("UICorner", notif).CornerRadius = UDim.new(0, 6)
-
 	TweenService:Create(notif, TweenInfo.new(0.25), { BackgroundTransparency = 0 }):Play()
 	task.wait(2.3)
 	TweenService:Create(notif, TweenInfo.new(0.3), { BackgroundTransparency = 1 }):Play()
@@ -193,9 +189,7 @@ end
 local function validateKey()
 	local key = input.Text
 	if key == "" then return notify("⚠️ Please enter a key.") end
-
 	notify("🔎 Checking key...")
-
 	local success, res = pcall(function()
 		return request({
 			Url = "https://clark-keysystem.onrender.com/validate_key?key=" .. key,
@@ -205,15 +199,12 @@ local function validateKey()
 			}
 		})
 	end)
-
 	if not success or not res then
 		return notify("❌ Request failed.")
 	end
-
 	local good, data = pcall(function()
 		return HttpService:JSONDecode(res.Body)
 	end)
-
 	if good and data.valid then
 		notify("✅ Key is valid! Welcome.")
 		exitGUI()
@@ -226,10 +217,10 @@ getBtn.MouseButton1Click:Connect(function()
 	setclipboard("https://clark-keysystem.onrender.com")
 	notify("🔗 Key link copied to clipboard!")
 end)
-
 checkBtn.MouseButton1Click:Connect(validateKey)
 '''
-    return Response(lua_script, mimetype="text/plain")
+
+    return Response(lua_gui, mimetype="text/plain")
 
 @app.route("/<path:path>")
 def static_file(path):
