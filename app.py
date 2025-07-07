@@ -71,14 +71,14 @@ def validate_key():
 def loader():
     user_agent = request.headers.get("User-Agent", "").lower()
 
-    browser_keywords = [
+    browser_signatures = [
         "mozilla", "chrome", "safari", "firefox", "edge",
         "opera", "gecko", "electron", "trident"
     ]
 
-    if any(keyword in user_agent for keyword in browser_keywords):
+    if any(sig in user_agent for sig in browser_signatures):
         return Response(
-            "<h1>Access Denied</h1><p>This endpoint is restricted.</p>",
+            "<h1>Access Denied</h1><p>This endpoint is restricted to exploit executors only.</p>",
             mimetype="text/html",
             status=403
         )
