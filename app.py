@@ -71,22 +71,21 @@ def validate_key():
 def loader():
     user_agent = request.headers.get("User-Agent", "").lower()
     forwarded = request.headers.get("X-Forwarded-For")
-    origin = request.headers.get("Origin", "")
-    referer = request.headers.get("Referer", "")
+    origin = request.headers.get("Origin")
+    referer = request.headers.get("Referer")
 
-    # Block any browser or tool
-    blocked_keywords = ["mozilla", "chrome", "safari", "edge", "firefox", "curl", "wget", "postman", "python", "java"]
-    if any(b in user_agent for b in blocked_keywords):
-        return "Access Denied (browser)", 403
+    blocked = ["mozilla", "chrome", "safari", "firefox", "edge"]
+    if any(b in user_agent for b in blocked):
+        return "Access Denied (Browser)", 403
     if forwarded or origin or referer:
-        return "Access Denied (headers)", 403
+        return "Access Denied (Headers)", 403
 
     try:
-        with open("gui.lua", "r", encoding="utf-8") as f:
+        with open("gui.lua", "r") as f:
             lua_code = f.read()
         return Response(lua_code, mimetype="text/plain")
-    except:
-        return "GUI not found", 500
+    except FileNotFoundError:
+        return "gui.lua not found", 500
 
 @app.route("/<path:path>")
 def static_file(path):
