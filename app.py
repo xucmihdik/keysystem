@@ -8,18 +8,13 @@ app = Flask(__name__, static_folder="public")
 TOKENS = {}
 SECRET_KEY = "p"
 
-def get_device_id():
-    ip = request.remote_addr
-    user_agent = request.headers.get("User-Agent", "")
-    return ip + user_agent
-
 @app.route("/")
 def home():
     return send_from_directory("public", "index.html")
 
 @app.route("/check_key_status")
 def check_key_status():
-    device_id = get_device_id()
+    device_id = request.remote_addr + request.headers.get("User-Agent", "")
     if device_id in USED_IPS:
         key = USED_IPS[device_id]
         return jsonify({"has_key": True, "key": key, "expires_at": KEYS[key]})
@@ -30,7 +25,7 @@ def get_token():
     referer = request.headers.get("Referer", "")
     if "linkvertise.com" not in referer.lower():
         return "", 403
-    device_id = get_device_id()
+    device_id = request.remote_addr + request.headers.get("User-Agent", "")
     token = uuid.uuid4().hex[:24]
     TOKENS[token] = device_id
     return redirect(f"/claim?token={token}")
@@ -38,7 +33,7 @@ def get_token():
 @app.route("/claim")
 def claim():
     token = request.args.get("token")
-    device_id = get_device_id()
+    device_id = request.remote_addr + request.headers.get("User-Agent", "")
     if not token or token not in TOKENS or TOKENS[token] != device_id:
         return "", 403
     if device_id in USED_IPS:
@@ -51,7 +46,7 @@ def claim():
 @app.route("/owner_generate")
 def owner_generate():
     secret = request.args.get("secret")
-    device_id = get_device_id()
+    device_id = request.remote_addr + request.headers.get("User-Agent", "")
     if secret != SECRET_KEY:
         return jsonify({"error": "Unauthorized"}), 403
     if device_id in USED_IPS:
@@ -74,9 +69,13 @@ def loader():
     origin = request.headers.get("Origin")
     referer = request.headers.get("Referer")
 
-    blocked = ["mozilla", "chrome", "safari", "firefox", "edge"]
-    if any(b in user_agent for b in blocked):
+    blocked_keywords = ["mozilla", "chrome", "safari", "firefox", "edge", "curl", "wget", "postman", "python"]
+    allowed_executors = ["synapse", "roblox", "krnl", "delta", "scriptware", "fluxus"]
+
+    if any(b in user_agent for b in blocked_keywords):
         return "Access Denied (Browser)", 403
+    if not any(e in user_agent for e in allowed_executors):
+        return "Access Denied (Unknown Executor)", 403
     if forwarded or origin or referer:
         return "Access Denied (Headers)", 403
 
