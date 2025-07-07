@@ -7,6 +7,7 @@ import os
 app = Flask(__name__, static_folder="public")
 TOKENS = {}
 SECRET_KEY = "p"
+LOADER_SECRET = "123pogiako"
 
 def get_device_id():
     ip = request.remote_addr
@@ -69,19 +70,22 @@ def validate_key():
 
 @app.route("/loader")
 def loader():
+    secret_header = request.headers.get("X-Secret")
+    if secret_header != LOADER_SECRET:
+        return "Access Denied", 403
+
     user_agent = request.headers.get("User-Agent", "").lower()
     forwarded = request.headers.get("X-Forwarded-For")
-    referer = request.headers.get("Referer", "")
     origin = request.headers.get("Origin", "")
+    referer = request.headers.get("Referer", "")
 
     block_keywords = ["mozilla", "chrome", "safari", "curl", "postman", "python", "wget"]
     if any(k in user_agent for k in block_keywords):
-        return "", 403
-    if forwarded or referer or origin:
-        return "", 403
+        return "Access Denied (Browser)", 403
+    if forwarded or origin or referer:
+        return "Access Denied (Headers)", 403
 
-    lua_gui = '''-- Clark KeySystem GUI
-local HttpService = game:GetService("HttpService")
+    lua_code = ''' local HttpService = game:GetService("HttpService")
 local TweenService = game:GetService("TweenService")
 local request = (syn and syn.request) or (http and http.request) or (http_request) or request
 if not request then return warn("❌ Your executor does not support HTTP requests.") end
@@ -96,11 +100,12 @@ gui.Parent = game:GetService("CoreGui")
 local main = Instance.new("Frame")
 main.AnchorPoint = Vector2.new(0.5, 0.5)
 main.Position = UDim2.new(0.5, 0, 0.5, 0)
-main.Size = UDim2.new(0, 0, 0, 0)
+main.Size = UDim2.new(0, 300, 0, 200)
 main.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 main.BorderSizePixel = 0
 main.BackgroundTransparency = 0
 main.Parent = gui
+main.Size = UDim2.new(0, 0, 0, 0)
 
 Instance.new("UICorner", main).CornerRadius = UDim.new(0, 12)
 local stroke = Instance.new("UIStroke", main)
@@ -149,74 +154,82 @@ checkBtn.TextSize = 15
 Instance.new("UICorner", checkBtn).CornerRadius = UDim.new(0, 8)
 
 TweenService:Create(main, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-    Size = UDim2.new(0, 300, 0, 200)
+	Size = UDim2.new(0, 300, 0, 200)
 }):Play()
 
 local function notify(text)
-    local notif = Instance.new("TextLabel", gui)
-    notif.Size = UDim2.new(0, 260, 0, 28)
-    notif.AnchorPoint = Vector2.new(1, 0)
-    notif.Position = UDim2.new(1, -10, 0, 10)
-    notif.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    notif.TextColor3 = Color3.fromRGB(0, 0, 0)
-    notif.Text = text
-    notif.TextSize = 14
-    notif.Font = Enum.Font.GothamSemibold
-    notif.BackgroundTransparency = 1
-    notif.ZIndex = 999
-    Instance.new("UICorner", notif).CornerRadius = UDim.new(0, 6)
-    TweenService:Create(notif, TweenInfo.new(0.25), { BackgroundTransparency = 0 }):Play()
-    task.wait(2.3)
-    TweenService:Create(notif, TweenInfo.new(0.3), { BackgroundTransparency = 1 }):Play()
-    task.wait(0.3)
-    notif:Destroy()
+	local notif = Instance.new("TextLabel", gui)
+	notif.Size = UDim2.new(0, 260, 0, 28)
+	notif.AnchorPoint = Vector2.new(1, 0)
+	notif.Position = UDim2.new(1, -10, 0, 10)
+	notif.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	notif.TextColor3 = Color3.fromRGB(0, 0, 0)
+	notif.Text = text
+	notif.TextSize = 14
+	notif.Font = Enum.Font.GothamSemibold
+	notif.BackgroundTransparency = 1
+	notif.ZIndex = 999
+	Instance.new("UICorner", notif).CornerRadius = UDim.new(0, 6)
+
+	TweenService:Create(notif, TweenInfo.new(0.25), { BackgroundTransparency = 0 }):Play()
+	task.wait(2.3)
+	TweenService:Create(notif, TweenInfo.new(0.3), { BackgroundTransparency = 1 }):Play()
+	task.wait(0.3)
+	notif:Destroy()
 end
 
 local function exitGUI()
-    local shrink = TweenService:Create(main, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
-        Size = UDim2.new(0, 0, 0, 0),
-        Position = UDim2.new(0.5, 0, 0.55, 0)
-    })
-    shrink:Play()
-    shrink.Completed:Wait()
-    gui:Destroy()
+	local shrink = TweenService:Create(main, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+		Size = UDim2.new(0, 0, 0, 0),
+		Position = UDim2.new(0.5, 0, 0.55, 0)
+	})
+	shrink:Play()
+	shrink.Completed:Wait()
+	gui:Destroy()
 end
 
 local function validateKey()
-    local key = input.Text
-    if key == "" then return notify("⚠️ Please enter a key.") end
-    notify("🔎 Checking key...")
-    local success, res = pcall(function()
-        return request({
-            Url = "https://clark-keysystem.onrender.com/validate_key?key=" .. key,
-            Method = "GET",
-            Headers = {
-                ["Content-Type"] = "application/json"
-            }
-        })
-    end)
-    if not success or not res then
-        return notify("❌ Request failed.")
-    end
-    local good, data = pcall(function()
-        return HttpService:JSONDecode(res.Body)
-    end)
-    if good and data.valid then
-        notify("✅ Key is valid! Welcome.")
-        exitGUI()
-    else
-        notify("❌ Invalid or expired key.")
-    end
+	local key = input.Text
+	if key == "" then return notify("⚠️ Please enter a key.") end
+
+	notify("🔎 Checking key...")
+
+	local success, res = pcall(function()
+		return request({
+			Url = "https://clark-keysystem.onrender.com/validate_key?key=" .. key,
+			Method = "GET",
+			Headers = {
+				["Content-Type"] = "application/json",
+				["X-Secret"] = "123pogiako"
+			}
+		})
+	end)
+
+	if not success or not res then
+		return notify("❌ Request failed.")
+	end
+
+	local good, data = pcall(function()
+		return HttpService:JSONDecode(res.Body)
+	end)
+
+	if good and data.valid then
+		notify("✅ Key is valid! Welcome.")
+		exitGUI()
+	else
+		notify("❌ Invalid or expired key.")
+	end
 end
 
 getBtn.MouseButton1Click:Connect(function()
-    setclipboard("https://clark-keysystem.onrender.com")
-    notify("🔗 Key link copied to clipboard!")
+	setclipboard("https://clark-keysystem.onrender.com")
+	notify("🔗 Key link copied to clipboard!")
 end)
+
 checkBtn.MouseButton1Click:Connect(validateKey)
 '''
 
-    return Response(lua_gui, mimetype="text/plain")
+    return Response(lua_code, mimetype="text/plain")
 
 @app.route("/<path:path>")
 def static_file(path):
