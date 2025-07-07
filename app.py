@@ -70,12 +70,18 @@ def validate_key():
 @app.route("/loader")
 def loader():
     user_agent = request.headers.get("User-Agent", "").lower()
-    browser_indicators = [
+    blocked_agents = [
         "mozilla", "chrome", "safari", "edge", "firefox",
-        "curl", "wget", "postman", "python", "java"
+        "curl", "wget", "postman", "python", "java", "libhttp",
+        "httpclient", "electron", "node", "axios", "windows nt"
     ]
-    if any(indicator in user_agent for indicator in browser_indicators):
-        return "403 Forbidden (Browser not allowed)", 403
+
+    if any(agent in user_agent for agent in blocked_agents):
+        return Response(
+            "<h1>Access Denied</h1><p>This endpoint is restricted.</p>",
+            mimetype="text/html",
+            status=403
+        )
 
     if not os.path.exists("gui.lua"):
         return "GUI file not found", 404
