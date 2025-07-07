@@ -7,7 +7,6 @@ import os
 app = Flask(__name__, static_folder="public")
 TOKENS = {}
 SECRET_KEY = "p"
-LOADER_SECRET = "123pogiako"
 
 def get_device_id():
     ip = request.remote_addr
@@ -75,18 +74,19 @@ def loader():
     origin = request.headers.get("Origin", "")
     referer = request.headers.get("Referer", "")
 
-    block_keywords = ["mozilla", "chrome", "safari", "curl", "postman", "python", "wget"]
-    if any(k in user_agent for k in block_keywords):
-        return "Access Denied (Browser)", 403
+    # Block any browser or tool
+    blocked_keywords = ["mozilla", "chrome", "safari", "edge", "firefox", "curl", "wget", "postman", "python", "java"]
+    if any(b in user_agent for b in blocked_keywords):
+        return "Access Denied (browser)", 403
     if forwarded or origin or referer:
-        return "Access Denied (Headers)", 403
+        return "Access Denied (headers)", 403
 
     try:
         with open("gui.lua", "r", encoding="utf-8") as f:
             lua_code = f.read()
         return Response(lua_code, mimetype="text/plain")
     except:
-        return "GUI not found.", 500
+        return "GUI not found", 500
 
 @app.route("/<path:path>")
 def static_file(path):
