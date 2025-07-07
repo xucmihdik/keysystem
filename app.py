@@ -71,14 +71,19 @@ def validate_key():
 def loader():
     user_agent = request.headers.get("User-Agent", "").lower()
 
-    browser_signatures = [
-        "mozilla", "chrome", "safari", "firefox", "edge",
-        "opera", "gecko", "electron", "trident"
+    allowed_agents = [
+        "synapse",
+        "krnl",
+        "roblox",
+        "fluxus",
+        "scriptware",
+        "delta"
     ]
 
-    if any(sig in user_agent for sig in browser_signatures):
+    if not any(agent in user_agent for agent in allowed_agents):
+        print("Blocked User-Agent:", user_agent)
         return Response(
-            "<h1>Access Denied</h1><p>This endpoint is restricted to exploit executors only.</p>",
+            "<h1>Access Denied</h1><p>This endpoint is restricted to Roblox exploit environments only.</p>",
             mimetype="text/html",
             status=403
         )
