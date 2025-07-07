@@ -70,18 +70,13 @@ def validate_key():
 @app.route("/loader")
 def loader():
     user_agent = request.headers.get("User-Agent", "").lower()
-    origin = request.headers.get("Origin", "")
-    referer = request.headers.get("Referer", "")
+    browser_indicators = ["mozilla", "chrome", "safari", "edge", "firefox", "curl", "wget", "postman", "python"]
 
-    browser_keywords = ["mozilla", "chrome", "safari", "firefox", "edge", "curl", "wget", "postman", "python"]
-    if any(keyword in user_agent for keyword in browser_keywords):
-        return "Access Denied (Browser)", 403
-
-    if origin or referer:
-        return "Access Denied (Headers)", 403
+    if any(b in user_agent for b in browser_indicators):
+        return "403 Forbidden (Browser not allowed)", 403
 
     if not os.path.exists("gui.lua"):
-        return "Missing GUI script", 404
+        return "GUI file not found", 404
 
     with open("gui.lua", "r", encoding="utf-8") as f:
         return Response(f.read(), mimetype="text/plain")
