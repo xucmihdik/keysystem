@@ -82,9 +82,7 @@ def loader():
     if referer or origin:
         return "Access denied (Referrer/Origin set)", 403
 
-    # LUA GUI PAYLOAD (SERVED TO LOADSTRING)
-    lua_gui = '''-- Clark KeySystem GUI
-local HttpService = game:GetService("HttpService")
+    lua_gui = '''local HttpService = game:GetService("HttpService")
 local TweenService = game:GetService("TweenService")
 local request = (syn and syn.request) or (http and http.request) or (http_request) or request
 if not request then return warn("❌ Your executor does not support HTTP requests.") end
