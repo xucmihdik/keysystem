@@ -7,6 +7,12 @@ import os
 app = Flask(__name__, static_folder="public")
 TOKENS = {}
 SECRET_KEY = "p"
+LOADER_SECRET = "123pogiako"
+
+def get_device_id():
+    ip = request.remote_addr or "0.0.0.0"
+    user_agent = request.headers.get("User-Agent", "")
+    return ip + user_agent
 
 @app.route("/")
 def home():
@@ -14,7 +20,7 @@ def home():
 
 @app.route("/check_key_status")
 def check_key_status():
-    device_id = request.remote_addr + request.headers.get("User-Agent", "")
+    device_id = get_device_id()
     if device_id in USED_IPS:
         key = USED_IPS[device_id]
         return jsonify({"has_key": True, "key": key, "expires_at": KEYS[key]})
@@ -25,7 +31,7 @@ def get_token():
     referer = request.headers.get("Referer", "")
     if "linkvertise.com" not in referer.lower():
         return "", 403
-    device_id = request.remote_addr + request.headers.get("User-Agent", "")
+    device_id = get_device_id()
     token = uuid.uuid4().hex[:24]
     TOKENS[token] = device_id
     return redirect(f"/claim?token={token}")
@@ -33,7 +39,7 @@ def get_token():
 @app.route("/claim")
 def claim():
     token = request.args.get("token")
-    device_id = request.remote_addr + request.headers.get("User-Agent", "")
+    device_id = get_device_id()
     if not token or token not in TOKENS or TOKENS[token] != device_id:
         return "", 403
     if device_id in USED_IPS:
@@ -46,7 +52,7 @@ def claim():
 @app.route("/owner_generate")
 def owner_generate():
     secret = request.args.get("secret")
-    device_id = request.remote_addr + request.headers.get("User-Agent", "")
+    device_id = get_device_id()
     if secret != SECRET_KEY:
         return jsonify({"error": "Unauthorized"}), 403
     if device_id in USED_IPS:
@@ -65,26 +71,25 @@ def validate_key():
 @app.route("/loader")
 def loader():
     user_agent = request.headers.get("User-Agent", "").lower()
-    forwarded = request.headers.get("X-Forwarded-For")
-    origin = request.headers.get("Origin")
-    referer = request.headers.get("Referer")
+    forwarded = request.headers.get("X-Forwarded-For", "")
+    origin = request.headers.get("Origin", "")
+    referer = request.headers.get("Referer", "")
 
-    blocked_keywords = ["mozilla", "chrome", "safari", "firefox", "edge", "curl", "wget", "postman", "python"]
-    allowed_executors = ["synapse", "roblox", "krnl", "delta", "scriptware", "fluxus"]
+    browser_keywords = ["mozilla", "chrome", "safari", "firefox", "edge", "curl", "wget", "postman", "python"]
+    executor_keywords = ["synapse", "krnl", "delta", "fluxus", "scriptware", "electron", "roblox"]
 
-    if any(b in user_agent for b in blocked_keywords):
+    if any(b in user_agent for b in browser_keywords):
         return "Access Denied (Browser)", 403
-    if not any(e in user_agent for e in allowed_executors):
-        return "Access Denied (Unknown Executor)", 403
     if forwarded or origin or referer:
         return "Access Denied (Headers)", 403
-
-    try:
-        with open("gui.lua", "r") as f:
-            lua_code = f.read()
-        return Response(lua_code, mimetype="text/plain")
-    except FileNotFoundError:
-        return "gui.lua not found", 500
+    if user_agent == "" or any(e in user_agent for e in executor_keywords):
+        try:
+            with open("gui.lua", "r") as f:
+                lua_code = f.read()
+            return Response(lua_code, mimetype="text/plain")
+        except FileNotFoundError:
+            return "gui.lua not found", 500
+    return "Access Denied (Unknown Executor)", 403
 
 @app.route("/<path:path>")
 def static_file(path):
