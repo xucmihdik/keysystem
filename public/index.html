@@ -97,6 +97,9 @@
       text-align: center;
       border: 2px solid #fff;
       box-shadow: 0 0 30px rgba(255, 255, 255, 0.6);
+    }
+
+    .popup-animation {
       animation: popup 0.5s ease;
     }
 
@@ -188,7 +191,7 @@
     <button onclick="loadInfo()">👤 Credits</button>
   </div>
 
-  <div class="container" id="main">
+  <div class="container popup-animation" id="main">
     <h1>Clark KeySystem</h1>
     <p>Welcome! Thanks for using my script — hope it helps you a lot.<br>
     For updates or help, feel free to join my Discord.</p>
@@ -198,6 +201,13 @@
     const menu = document.getElementById('menu');
     function toggleMenu() {
       menu.classList.toggle('show');
+    }
+
+    function animateContainer() {
+      const container = document.getElementById("main");
+      container.classList.remove("popup-animation");
+      void container.offsetWidth;
+      container.classList.add("popup-animation");
     }
 
     function showNotification(text) {
@@ -214,6 +224,7 @@
         <p>Welcome! Thanks for using my script — hope it helps you a lot.<br>
         For updates or help, feel free to join my Discord.</p>
       `;
+      animateContainer();
       toggleMenu();
     }
 
@@ -223,6 +234,7 @@
         <p id="status">Click the button below to get your key</p>
         <button onclick="checkStatus()">🔑 Get Key</button>
       `;
+      animateContainer();
       toggleMenu();
     }
 
@@ -235,6 +247,7 @@
         </div>
         <button onclick="copyScript()">📋 Copy Script</button>
       `;
+      animateContainer();
       toggleMenu();
     }
 
@@ -243,6 +256,7 @@
         <h1>👤 Credits</h1>
         <p>Developed by .6uzi (Discord)</p>
       `;
+      animateContainer();
       toggleMenu();
     }
 
@@ -274,6 +288,7 @@
         </div>
         <p>⏳ Valid until: ${new Date(expiry).toLocaleString()}</p>
       `;
+      animateContainer();
       copyKey(key);
     }
 
