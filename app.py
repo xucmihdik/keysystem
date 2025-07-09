@@ -69,18 +69,8 @@ def validate_key():
 
 @app.route("/loader")
 def loader():
-    user_agent = request.headers.get("User-Agent", "").lower()
-
-    allowed_agents = [
-        "synapse",
-        "krnl",
-        "roblox",
-        "fluxus",
-        "scriptware",
-        "delta"
-    ]
-
-    if not any(agent in user_agent for agent in allowed_agents):
+    secret = request.headers.get("X-Roblox-Secret")
+    if secret != "xyz123":  # Your invisible auth key
         return Response("ACCESS DENIED", mimetype="text/plain", status=403)
 
     if not os.path.exists("gui.lua"):
