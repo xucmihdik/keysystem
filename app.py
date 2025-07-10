@@ -20,9 +20,18 @@ def get_device_id():
 @app.route("/check_key_status")
 def check_key_status():
     device_id = get_device_id()
-    if device_id in USED_IPS:
-        key = USED_IPS[device_id]
-        return jsonify({"has_key": True, "key": key, "expires_at": KEYS[key]})
+    key = USED_IPS.get(device_id)
+
+    if key:
+        expiry_str = KEYS.get(key)
+        if expiry_str:
+            expiry = datetime.fromisoformat(expiry_str)
+            if expiry > datetime.utcnow():
+                return jsonify({"has_key": True, "key": key, "expires_at": expiry_str})
+            else:
+                del KEYS[key]
+                del USED_IPS[device_id]
+
     return jsonify({"has_key": False})
 
 @app.route("/get_token")
@@ -43,6 +52,11 @@ def claim():
         return "", 403
     if device_id in USED_IPS:
         key = USED_IPS[device_id]
+        expiry = datetime.fromisoformat(KEYS.get(key, "1970-01-01T00:00:00"))
+        if expiry <= datetime.utcnow():
+            del KEYS[key]
+            del USED_IPS[device_id]
+            key, _ = generate_key(device_id)
     else:
         key, _ = generate_key(device_id)
     del TOKENS[token]
@@ -56,6 +70,11 @@ def owner_generate():
         return jsonify({"error": "Unauthorized"}), 403
     if device_id in USED_IPS:
         key = USED_IPS[device_id]
+        expiry = datetime.fromisoformat(KEYS.get(key, "1970-01-01T00:00:00"))
+        if expiry <= datetime.utcnow():
+            del KEYS[key]
+            del USED_IPS[device_id]
+            key, _ = generate_key(device_id)
     else:
         key, _ = generate_key(device_id)
     return jsonify({"key": key, "expires_at": KEYS[key], "status": "owner"})
@@ -70,7 +89,7 @@ def validate_key():
 @app.route("/loader")
 def loader():
     secret = request.headers.get("X-Roblox-Secret")
-    if secret != "xyz123":  # Your invisible auth key
+    if secret != "xyz123":
         return Response("ACCESS DENIED", mimetype="text/plain", status=403)
 
     if not os.path.exists("gui.lua"):
