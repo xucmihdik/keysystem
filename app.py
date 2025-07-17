@@ -7,21 +7,22 @@ import os
 app = Flask(__name__, static_folder="public")
 TOKENS = {}
 SECRET_KEY = "p"
+OWNER_IP = "123.123.123.123"  # Replace this with your real IP address
 
-@app.route("/")
-def home():
-    return send_from_directory("public", "index.html")
-
+# Helper
 def get_device_id():
     ip = request.remote_addr
     user_agent = request.headers.get("User-Agent", "")
     return ip + user_agent
 
+@app.route("/")
+def home():
+    return send_from_directory("public", "index.html")
+
 @app.route("/check_key_status")
 def check_key_status():
     device_id = get_device_id()
     key = USED_IPS.get(device_id)
-
     if key:
         expiry_str = KEYS.get(key)
         if expiry_str:
@@ -31,7 +32,6 @@ def check_key_status():
             else:
                 del KEYS[key]
                 del USED_IPS[device_id]
-
     return jsonify({"has_key": False})
 
 @app.route("/get_token")
@@ -88,15 +88,20 @@ def validate_key():
 
 @app.route("/loader")
 def loader():
-    secret = request.headers.get("X-Roblox-Secret")
-    if secret != "xyz123":
-        return Response("ACCESS DENIED", mimetype="text/plain", status=403)
+    ip = request.headers.get("X-Forwarded-For", request.remote_addr)
 
-    if not os.path.exists("gui.lua"):
-        return "GUI file not found", 404
-
-    with open("gui.lua", "r", encoding="utf-8") as f:
-        return Response(f.read(), mimetype="text/plain")
+    if ip == OWNER_IP:
+        # Owner sees full script
+        if os.path.exists("gui_owner.lua"):
+            with open("gui_owner.lua", "r", encoding="utf-8") as f:
+                return Response(f.read(), mimetype="text/plain")
+        return "Owner GUI not found", 404
+    else:
+        # Public sees limited script
+        if os.path.exists("gui.lua"):
+            with open("gui.lua", "r", encoding="utf-8") as f:
+                return Response(f.read(), mimetype="text/plain")
+        return "GUI not found", 404
 
 @app.route("/<path:path>")
 def static_file(path):
