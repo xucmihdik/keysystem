@@ -18,6 +18,11 @@ def get_device_id():
     user_agent = request.headers.get("User  -Agent", "")
     return ip + user_agent
 
+def format_expiry(expiry):
+    """Convert expiry string to a more readable format."""
+    date = datetime.fromisoformat(expiry)
+    return date.strftime("%B %d, %Y %I:%M %p")  # Example: July 22, 2025 08:36 AM
+
 @app.route("/")
 def home():
     return send_from_directory("public", "index.html")
@@ -104,7 +109,7 @@ def static_file(path):
 # Panel Route
 @app.route("/panel", methods=["GET"])
 def panel():
-    return render_template("panel.html", keys=KEYS)  # Render the panel without login protection
+    return render_template("panel.html", keys=KEYS, format_expiry=format_expiry)  # Pass the function to the template
 
 @app.route("/logout")
 def logout():
