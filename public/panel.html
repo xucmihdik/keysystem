@@ -30,63 +30,6 @@
       z-index: 0;
     }
 
-    .menu-toggle {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      z-index: 101;
-      cursor: pointer;
-      font-size: 30px;
-      color: white;
-      user-select: none;
-    }
-
-    .menu {
-      position: fixed;
-      top: 60px;
-      right: 20px;
-      background: rgba(0, 0, 0, 0.95);
-      border: 2px solid #fff;
-      border-radius: 10px;
-      padding: 10px;
-      display: none;
-      flex-direction: column;
-      width: 170px;
-      box-shadow: 0 0 15px rgba(255,255,255,0.3);
-      z-index: 100;
-      animation: fadeIn 0.25s ease;
-    }
-
-    .menu.show {
-      display: flex;
-    }
-
-    .menu button {
-      background-color: transparent !important;
-      -webkit-appearance: none;
-      appearance: none;
-      border: none;
-      color: #ffffff !important;
-      font-weight: bold;
-      padding: 12px 10px;
-      text-align: left;
-      font-size: 17px;
-      cursor: pointer;
-      border-radius: 6px;
-      transition: background 0.2s ease;
-      text-shadow: 0 0 5px rgba(255,255,255,0.6);
-    }
-
-    .menu button:hover {
-      background: rgba(255, 255, 255, 0.1);
-      color: #fff !important;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-8px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
     .container {
       z-index: 2;
       background: rgba(0, 0, 0, 0.75);
@@ -99,24 +42,34 @@
       box-shadow: 0 0 30px rgba(255, 255, 255, 0.6);
     }
 
-    .popup-animation {
-      animation: popup 0.5s ease;
-    }
-
-    @keyframes popup {
-      from { opacity: 0; transform: scale(0.8); }
-      to { opacity: 1; transform: scale(1); }
-    }
-
     h1 {
       font-size: 1.7rem;
       margin-bottom: 12px;
       color: #fff;
     }
 
-    p {
-      color: #ccc;
-      margin-top: 10px;
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 5px;
+    }
+
+    button {
+      background: #fff;
+      color: #000;
+      border: none;
+      padding: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: 0.3s ease;
+      width: 100%;
+    }
+
+    button:hover {
+      background: #111;
+      color: #fff;
     }
 
     .key-box {
@@ -135,23 +88,6 @@
     .key-text {
       font-weight: bold;
       font-size: 1rem;
-    }
-
-    button:not(.menu-toggle) {
-      background: #fff;
-      color: #000;
-      border: none;
-      padding: 12px 18px;
-      font-size: 1rem;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: 0.3s ease;
-      width: 100%;
-    }
-
-    button:hover:not(.menu-toggle) {
-      background: #111;
-      color: #fff;
     }
 
     .notification {
@@ -177,15 +113,16 @@
 <body>
   <canvas id="bgCanvas"></canvas>
 
-  <div class="menu-toggle" onclick="toggleMenu()">☰</div>
-
-  <div class="menu" id="menu">
-    <button onclick="loadHome()">🏠 Home</button>
-    <button onclick="loadKeys()">🔑 Manage Keys</button>
-    <button onclick="logout()">🚪 Logout</button>
+  <div class="container" id="loginContainer">
+    <h1>Admin Login</h1>
+    <form id="loginForm">
+      <input type="text" id="username" placeholder="Username" required />
+      <input type="password" id="password" placeholder="Password" required />
+      <button type="submit">Login</button>
+    </form>
   </div>
 
-  <div class="container popup-animation" id="main">
+  <div class="container" id="main" style="display: none;">
     <h1>Clark KeySystem - Admin Panel</h1>
     <p>Welcome to the admin panel. You can manage keys below.</p>
     <h2>All Keys</h2>
@@ -202,10 +139,23 @@
   </div>
 
   <script>
-    const menu = document.getElementById('menu');
-    function toggleMenu() {
-      menu.classList.toggle('show');
-    }
+    const loginForm = document.getElementById('loginForm');
+    const mainContainer = document.getElementById('main');
+    const loginContainer = document.getElementById('loginContainer');
+
+    loginForm.addEventListener('submit', function(event) {
+      event.preventDefault();
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      // Check credentials
+      if (username === "admin" && password === "password") {  // Replace with your actual credentials
+        loginContainer.style.display = 'none';
+        mainContainer.style.display = 'block';
+      } else {
+        showNotification("Invalid credentials");
+      }
+    });
 
     function showNotification(text) {
       const notif = document.createElement("div");
@@ -244,10 +194,6 @@
           showNotification("Error deleting key.");
         }
       });
-    }
-
-    function logout() {
-      window.location.href = "/logout";
     }
 
     const canvas = document.getElementById("bgCanvas");
