@@ -8,13 +8,13 @@ TOKENS = {}
 KEYS = {}
 USED_IPS = {}
 SECRET_KEY = "p"
-ADMIN_USERNAME = "lark"  # Set your admin username
-ADMIN_PASSWORD = "lark"  # Set your admin password
+ADMIN_USERNAME = "admin"  # Set your admin username
+ADMIN_PASSWORD = "password"  # Set your admin password
 
 # Helper
 def get_device_id():
     ip = request.remote_addr
-    user_agent = request.headers.get("User  -Agent", "")
+    user_agent = request.headers.get("User -Agent", "")
     return ip + user_agent
 
 def format_expiry(expiry):
