@@ -9,8 +9,8 @@ TOKENS = {}
 KEYS = {}
 USED_IPS = {}
 SECRET_KEY = "p"
-ADMIN_USERNAME = "lark"  # Set your admin username
-ADMIN_PASSWORD = "procoder"  # Set your admin password
+ADMIN_USERNAME = "admin"  # Set your admin username
+ADMIN_PASSWORD = "password"  # Set your admin password
 
 # Helper
 def get_device_id():
