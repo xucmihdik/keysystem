@@ -130,12 +130,14 @@
       {% for key, expiry in keys.items() %}
         <div class="key-box">
           <span class="key-text">{{ key }} (Valid until: {{ expiry }})</span>
+          <button onclick="copyKey('{{ key }}')">Copy</button>
           <button onclick="deleteKey('{{ key }}')">Delete</button>
         </div>
       {% endfor %}
     </div>
     <h2>Create New Key</h2>
     <button onclick="createKey()">Create Key</button>
+    <button onclick="logout()">Logout</button>
   </div>
 
   <script>
@@ -194,6 +196,20 @@
           showNotification("Error deleting key.");
         }
       });
+    }
+
+    function copyKey(key) {
+      navigator.clipboard.writeText(key).then(() => {
+        showNotification(`Key copied: ${key}`);
+      }).catch(err => {
+        showNotification("Failed to copy key.");
+      });
+    }
+
+    function logout() {
+      // Reset the UI to show the login form
+      mainContainer.style.display = 'none';
+      loginContainer.style.display = 'block';
     }
 
     const canvas = document.getElementById("bgCanvas");
