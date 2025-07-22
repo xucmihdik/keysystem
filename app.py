@@ -8,7 +8,7 @@ TOKENS = {}
 KEYS = {}
 USED_IPS = {}
 SECRET_KEY = "p"
-ADMIN_USERNAME = "lark"  # Set your admin username
+ADMIN_USERNAME = "admin"  # Set your admin username
 ADMIN_PASSWORD = "password"  # Set your admin password
 
 # Helper
@@ -114,9 +114,9 @@ def panel():
         if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
             return render_template("panel.html", keys=KEYS, format_expiry=format_expiry)  # Render panel with keys
         else:
-            return render_template("panel.html", error="Invalid credentials")  # Render panel with error
+            return render_template("panel.html", error="Invalid credentials", keys={})  # Render panel with error
 
-    return render_template("panel.html")  # Render panel
+    return render_template("panel.html", keys={})  # Render panel with empty keys
 
 @app.route("/logout")
 def logout():
