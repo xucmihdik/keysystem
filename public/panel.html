@@ -108,6 +108,16 @@
       from { opacity: 0; }
       to { opacity: 1; }
     }
+
+    .manage-key {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .manage-key input {
+      width: 60px;
+    }
   </style>
 </head>
 <body>
@@ -132,6 +142,10 @@
           <span class="key-text">{{ key }} (Valid until: {{ format_expiry(expiry) }})</span>
           <button onclick="copyKey('{{ key }}')">Copy</button>
           <button onclick="deleteKey('{{ key }}')">Delete</button>
+          <div class="manage-key">
+            <input type="number" id="days-{{ key }}" placeholder="Days" min="1" />
+            <button onclick="manageKey('{{ key }}')">Manage</button>
+          </div>
         </div>
       {% endfor %}
     </div>
@@ -189,6 +203,10 @@
         <span class="key-text">${key} (Valid until: ${formatExpiry(expiry)})</span>
         <button onclick="copyKey('${key}')">Copy</button>
         <button onclick="deleteKey('${key}')">Delete</button>
+        <div class="manage-key">
+          <input type="number" id="days-${key}" placeholder="Days" min="1" />
+          <button onclick="manageKey('${key}')">Manage</button>
+        </div>
       `;
       keysContainer.appendChild(keyBox);
     }
@@ -212,6 +230,36 @@
           showNotification("Error deleting key.");
         }
       });
+    }
+
+    function manageKey(key) {
+      const daysInput = document.getElementById(`days-${key}`);
+      const days = daysInput.value;
+      if (days && days > 0) {
+        fetch("/manage_key", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ key: key, days: days })
+        })
+        .then(res => {
+          if (res.ok) {
+            showNotification(`Key ${key} updated to expire in ${days} days.`);
+            // Update the expiry date in the UI
+            const newExpiry = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+            const keyBox = document.getElementById(`key-${key}`);
+            if (keyBox) {
+              const expiryText = keyBox.querySelector('.key-text');
+              expiryText.textContent = `${key} (Valid until: ${formatExpiry(newExpiry.toISOString())})`;
+            }
+          } else {
+            showNotification("Error updating key.");
+          }
+        });
+      } else {
+        showNotification("Please enter a valid number of days.");
+      }
     }
 
     function copyKey(key) {
