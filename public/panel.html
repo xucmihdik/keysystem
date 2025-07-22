@@ -130,7 +130,7 @@
 
     .error {
       color: red;
-      display: none; /* Initially hidden */
+      display: {% if error %} block {% else %} none {% endif %}; /* Show if there's an error */
     }
   </style>
 </head>
@@ -144,7 +144,7 @@
       <input type="password" name="password" placeholder="Password" required />
       <button type="submit">Login</button>
     </form>
-    <div id="loginError" class="error">Invalid credentials</div>
+    <div id="loginError" class="error">{{ error }}</div> <!-- Display error message if exists -->
   </div>
 
   <div class="container" id="main" style="display: none;">
@@ -176,24 +176,12 @@
     const loginForm = document.getElementById('loginForm');
     const mainContainer = document.getElementById('main');
     const loginContainer = document.getElementById('loginContainer');
-    const loginError = document.getElementById('loginError');
 
     // Show the login container initially
     loginContainer.style.display = 'block';
 
     loginForm.addEventListener('submit', function(event) {
-      event.preventDefault();
-      const formData = new FormData(loginForm);
-      const username = formData.get('username');
-      const password = formData.get('password');
-
-      // Check credentials
-      if (username === "admin" && password === "password") {  // Replace with your actual credentials
-        loginContainer.style.display = 'none';
-        mainContainer.style.display = 'block';
-      } else {
-        loginError.style.display = 'block'; // Show error message
-      }
+      // No client-side checks; all checks are done in app.py
     });
 
     function showNotification(text) {
@@ -226,4 +214,132 @@
         <span class="key-text">${key} (Valid until: ${formatExpiry(expiry)})</span>
         <div class="button-group">
           <button onclick="copyKey('${key}')">Copy</button>
-          <button onclick="deleteKey
+          <button onclick="deleteKey('${key}')">Delete</button>
+        </div>
+        <div class="manage-key" id="manage-${key}">
+          <input type="number" id="days-${key}" placeholder="Days" min="1" />
+          <button onclick="manageKey('${key}')">Update</button>
+        </div>
+        <button onclick="toggleManage('${key}')">Manage</button>
+      `;
+      keysContainer.appendChild(keyBox);
+    }
+
+    function toggleManage(key) {
+      const manageKeyDiv = document.getElementById(`manage-${key}`);
+      if (manageKeyDiv.style.display === "none" || manageKeyDiv.style.display === "") {
+        manageKeyDiv.style.display = "flex"; // Show the manage input
+      } else {
+        manageKeyDiv.style.display = "none"; // Hide the manage input
+      }
+    }
+
+    function deleteKey(key) {
+      fetch("/delete_key", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ key: key })
+      })
+      .then(res => {
+        if (res.ok) {
+          showNotification(`Key deleted: ${key}`);
+          const keyBox = document.getElementById(`key-${key}`);
+          if (keyBox) {
+            keyBox.remove(); // Remove the key box from the UI
+          }
+        } else {
+          showNotification("Error deleting key.");
+        }
+      });
+    }
+
+    function manageKey(key) {
+      const daysInput = document.getElementById(`days-${key}`);
+      const days = daysInput.value;
+      if (days && days > 0) {
+        fetch("/manage_key", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ key: key, days: days })
+        })
+        .then(res => {
+          if (res.ok) {
+            showNotification(`Key ${key} updated to expire in ${days} days.`);
+            // Update the expiry date in the UI
+            const newExpiry = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+            const keyBox = document.getElementById(`key-${key}`);
+            if (keyBox) {
+              const expiryText = keyBox.querySelector('.key-text');
+              expiryText.textContent = `${key} (Valid until: ${formatExpiry(newExpiry.toISOString())})`;
+            }
+          } else {
+            showNotification("Error updating key.");
+          }
+        });
+      } else {
+        showNotification("Please enter a valid number of days.");
+      }
+    }
+
+    function copyKey(key) {
+      navigator.clipboard.writeText(key).then(() => {
+        showNotification(`Key copied: ${key}`);
+      }).catch(err => {
+        showNotification("Failed to copy key.");
+      });
+    }
+
+    function logout() {
+      // Reset the UI to show the login form
+      mainContainer.style.display = 'none';
+      loginContainer.style.display = 'block';
+    }
+
+    function formatExpiry(expiry) {
+      const date = new Date(expiry);
+      return date.toLocaleString(); // Format to a readable string
+    }
+
+    const canvas = document.getElementById("bgCanvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const particles = Array.from({ length: 60 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      size: Math.random() * 2 + 1,
+      speedX: (Math.random() - 0.5) * 0.5,
+      speedY: (Math.random() - 0.5) * 0.5,
+      color: Math.random() > 0.5 ? '#fff' : '#000'
+    }));
+
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let p of particles) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+        p.x += p.speedX;
+        p.y += p.speedY;
+        if (p.x < 0) p.x = canvas.width;
+        if (p.x > canvas.width) p.x = 0;
+        if (p.y < 0) p.y = canvas.height;
+        if (p.y > canvas.height) p.y = 0;
+      }
+      requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    window.addEventListener("resize", () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+  </script>
+</body>
+</html>
