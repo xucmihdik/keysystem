@@ -8,8 +8,8 @@ TOKENS = {}
 KEYS = {}
 USED_IPS = {}
 SECRET_KEY = "p"
-ADMIN_USERNAME = "admin"  # Set your admin username
-ADMIN_PASSWORD = "password"  # Set your admin password
+ADMIN_USERNAME = "lark"  # Set your admin username
+ADMIN_PASSWORD = "proplayer"  # Set your admin password
 logged_in_users = set()  # Track logged-in users
 
 # Helper
@@ -107,9 +107,17 @@ def static_file(path):
     return send_from_directory("public", path)
 
 # Panel Route
-@app.route("/panel", methods=["GET"])
+@app.route("/panel", methods=["GET", "POST"])
 def panel():
-    return render_template("panel.html", keys=KEYS, format_expiry=format_expiry)  # Pass the function to the template
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+            return render_template("panel.html", keys=KEYS, format_expiry=format_expiry)  # Pass the function to the template
+        else:
+            return render_template("panel.html", keys=KEYS, format_expiry=format_expiry, error="Invalid credentials")  # Render panel with error
+
+    return render_template("panel.html", keys=KEYS, format_expiry=format_expiry)  # Render panel
 
 @app.route("/logout")
 def logout():
