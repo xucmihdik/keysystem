@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Clark KeySystem - Admin Panel</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      font-family: 'Segoe UI', sans-serif;
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+    .container {
+      z-index: 2;
+      background: rgba(0, 0, 0, 0.75);
+      border-radius: 16px;
+      padding: 24px 20px;
+      width: 90%;
+      max-width: 600px;
+      text-align: center;
+      border: 2px solid #fff;
+      box-shadow: 0 0 30px rgba(255, 255, 255, 0.6);
+    }
+    h1 {
+      font-size: 1.7rem;
+      margin-bottom: 12px;
+      color: #fff;
+    }
+    .key-box {
+      background: #fff;
+      color: #000;
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin: 20px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+      word-break: break-word;
+    }
+    .key-text {
+      font-weight: bold;
+      font-size: 1rem;
+      width: 100%;
+    }
+    button {
+      background: #fff;
+      color: #000;
+      border: none;
+      padding: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: 0.3s ease;
+      width: 100%;
+      margin: 5px 0;
+    }
+    button:hover {
+      background: #111;
+      color: #fff;
+    }
+    .manage-key {
+      display: none; /* Initially hidden */
+      align-items: center;
+      gap: 10px;
+      width: 100%; /* Ensure it takes full width */
+    }
+    .manage-key input {
+      width: 60px;
+    }
+    .button-group {
+      display: flex;
+      justify-content: space-between; /* Space buttons evenly */
+      width: 100%; /* Ensure it takes full width */
+    }
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #111;
+      padding: 10px 16px;
+      color: #fff;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+      z-index: 999;
+      animation: fadeInNotif 0.3s forwards;
+    }
+    @keyframes fadeInNotif {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Clark KeySystem - Admin Panel</h1>
+    <p>Welcome to the admin panel. You can manage keys below.</p>
+    <h2>All Keys</h2>
+    <div id="keysContainer">
+      {% for key, expiry in keys.items() %}
+        <div class="key-box" id="key-{{ key }}">
+          <span class="key-text">{{ key }} (Valid until: {{ format_expiry(expiry) }})</span>
+          <div class="button-group">
+            <button onclick="copyKey('{{ key }}')">Copy</button>
+            <button onclick="deleteKey('{{ key }}')">Delete</button>
+          </div>
+          <div class="manage-key" id="manage-{{ key }}">
+            <input type="number" id="days-{{ key }}" placeholder="Days" min="1" />
+            <button onclick="manageKey('{{ key }}')">Update</button>
+          </div>
+          <button onclick="toggleManage('{{ key }}')">Manage</button>
+        </div>
+      {% endfor %}
+    </div>
+    <h2>Create New Key</h2>
+    <button onclick="createKey()">Create Key</button>
+    <button onclick="logout()">Logout</button>
+  </div>
+  <script>
+    function showNotification(text) {
+      const notif = document.createElement("div");
+      notif.className = "notification";
+      notif.textContent = text;
+      document.body.appendChild(notif);
+      setTimeout(() => notif.remove(), 3000);
+    }
+
+    function createKey() {
+      fetch("/create_key", { method: "POST" })
+        .then(res => res.json())
+        .then(data => {
+          if (data.key) {
+            showNotification(`Key created: ${data.key} (Valid until: ${data.expires_at})`);
+            addKeyToContainer(data.key, data.expires_at);
+          } else {
+            showNotification("Error creating key.");
+          }
+        });
+    }
+
+    function addKeyToContainer(key, expiry) {
+      const keysContainer = document.getElementById('keysContainer');
+      const keyBox = document.createElement('div');
+      keyBox.className = 'key-box';
+      keyBox.id = `key-${key}`;
+      keyBox.innerHTML = `
+        <span class="key-text">${key} (Valid until: ${formatExpiry(expiry)})</span>
+        <div class="button-group">
+          <button onclick="copyKey('${key}')">Copy</button>
+          <button onclick="deleteKey('${key}')">Delete</button>
+        </div>
+        <div class="manage-key" id="manage-${key}">
+          <input type="number" id="days-${key}" placeholder="Days" min="1" />
+          <button onclick="manageKey('${key}')">Update</button>
+        </div>
+        <button onclick="toggleManage('${key}')">Manage</button>
+      `;
+      keysContainer.appendChild(keyBox);
+    }
+
+    function toggleManage(key) {
+      const manageKeyDiv = document.getElementById(`manage-${key}`);
+      if (manageKeyDiv.style.display === "none" || manageKeyDiv.style.display === "") {
+        manageKeyDiv.style.display = "flex"; // Show the manage input
+      } else {
+        manageKeyDiv.style.display = "none"; // Hide the manage input
+      }
+    }
+
+    function copyKey(key) {
+      navigator.clipboard.writeText(key).then(() => {
+        showNotification(`Key copied: ${key}`);
+      }).catch(err => {
+        showNotification("Failed to copy key.");
+      });
+    }
+
+    function deleteKey(key) {
+      fetch("/delete_key", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ key: key })
+      })
+      .then(res => {
+        if (res.ok) {
+          showNotification(`Key deleted: ${key}`);
+          const keyBox = document.getElementById(`key-${key}`);
+          if (keyBox) {
+            keyBox.remove(); // Remove the key box from the UI
+          }
+        } else {
+          showNotification("Error deleting key.");
+        }
+      });
+    }
+
+    function manageKey(key) {
+      const daysInput = document.getElementById(`days-${key}`);
+      const days = daysInput.value;
+      if (days && days > 0) {
+        fetch("/manage_key", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ key: key, days: days })
+        })
+        .then(res => {
+          if (res.ok) {
+            showNotification(`Key ${key} updated to expire in ${days} days.`);
+            // Update the expiry date in the UI
+            const newExpiry = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+            const keyBox = document.getElementById(`key-${key}`);
+            if (keyBox) {
+              const expiryText = keyBox.querySelector('.key-text');
+              expiryText.textContent = `${key} (Valid until: ${formatExpiry(newExpiry.toISOString())})`;
+            }
+          } else {
+            showNotification("Error updating key.");
+          }
+        });
+      } else {
+        showNotification("Please enter a valid number of days.");
+      }
+    }
+
+    function logout() {
+      window.location.href = "/panel"; // Redirect to login page
+    }
+
+    function formatExpiry(expiry) {
+      const date = new Date(expiry);
+      return date.toLocaleString(); // Format to a readable string
+    }
+  </script>
+</body>
+</html>
