@@ -14,7 +14,7 @@ ADMIN_PASSWORD = "password"  # Set your admin password
 # Helper
 def get_device_id():
     ip = request.remote_addr
-    user_agent = request.headers.get("User-Agent", "")
+    user_agent = request.headers.get("User -Agent", "")
     return ip + user_agent
 
 def format_expiry(expiry):
@@ -121,7 +121,10 @@ def panel():
 # Dashboard Route
 @app.route("/panel/dashboard")
 def dashboard():
-    return render_template("dashboard.html", keys=KEYS, format_expiry=format_expiry)  # Render dashboard with keys
+    # Check if the user is logged in
+    if request.method == "GET":
+        return render_template("dashboard.html", keys=KEYS, format_expiry=format_expiry)  # Render dashboard with keys
+    return redirect("/panel")  # Redirect to login if not logged in
 
 @app.route("/logout")
 def logout():
