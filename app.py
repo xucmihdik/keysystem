@@ -15,7 +15,7 @@ logged_in_users = set()  # Track logged-in users
 # Helper
 def get_device_id():
     ip = request.remote_addr
-    user_agent = request.headers.get("User   -Agent", "")
+    user_agent = request.headers.get("User  -Agent", "")
     return ip + user_agent
 
 @app.route("/")
