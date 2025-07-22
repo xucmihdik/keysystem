@@ -94,7 +94,6 @@ def validate_key():
         return jsonify({"valid": True, "expires_at": KEYS[key]})
     return jsonify({"valid": False}), 404
 
-# ✅ PUBLIC loader endpoint — everyone gets gui.lua
 @app.route("/loader")
 def loader():
     if os.path.exists("gui.lua"):
