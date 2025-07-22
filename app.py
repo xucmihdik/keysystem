@@ -15,7 +15,7 @@ logged_in_users = set()  # Track logged-in users
 # Helper
 def get_device_id():
     ip = request.remote_addr
-    user_agent = request.headers.get("User  -Agent", "")
+    user_agent = request.headers.get("User   -Agent", "")
     return ip + user_agent
 
 def format_expiry(expiry):
@@ -130,6 +130,18 @@ def delete_key():
                 del USED_IPS[ip]
                 break
         return jsonify({"success": True})
+    return jsonify({"error": "Key not found"}), 404
+
+@app.route("/manage_key", methods=["POST"])
+def manage_key():
+    data = request.json
+    key = data.get("key")
+    days = data.get("days")
+
+    if key in KEYS:
+        expiry = datetime.utcnow() + timedelta(days=int(days))
+        KEYS[key] = expiry.isoformat()  # Update the expiry date
+        return jsonify({"success": True, "new_expiry": KEYS[key]})
     return jsonify({"error": "Key not found"}), 404
 
 @app.route("/all_keys", methods=["GET"])
