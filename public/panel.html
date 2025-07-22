@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Clark KeySystem - Admin Panel</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      font-family: 'Segoe UI', sans-serif;
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 0;
+    }
+
+    .menu-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 101;
+      cursor: pointer;
+      font-size: 30px;
+      color: white;
+      user-select: none;
+    }
+
+    .menu {
+      position: fixed;
+      top: 60px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.95);
+      border: 2px solid #fff;
+      border-radius: 10px;
+      padding: 10px;
+      display: none;
+      flex-direction: column;
+      width: 170px;
+      box-shadow: 0 0 15px rgba(255,255,255,0.3);
+      z-index: 100;
+      animation: fadeIn 0.25s ease;
+    }
+
+    .menu.show {
+      display: flex;
+    }
+
+    .menu button {
+      background-color: transparent !important;
+      -webkit-appearance: none;
+      appearance: none;
+      border: none;
+      color: #ffffff !important;
+      font-weight: bold;
+      padding: 12px 10px;
+      text-align: left;
+      font-size: 17px;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: background 0.2s ease;
+      text-shadow: 0 0 5px rgba(255,255,255,0.6);
+    }
+
+    .menu button:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff !important;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .container {
+      z-index: 2;
+      background: rgba(0, 0, 0, 0.75);
+      border-radius: 16px;
+      padding: 24px 20px;
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+      border: 2px solid #fff;
+      box-shadow: 0 0 30px rgba(255, 255, 255, 0.6);
+    }
+
+    .popup-animation {
+      animation: popup 0.5s ease;
+    }
+
+    @keyframes popup {
+      from { opacity: 0; transform: scale(0.8); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    h1 {
+      font-size: 1.7rem;
+      margin-bottom: 12px;
+      color: #fff;
+    }
+
+    p {
+      color: #ccc;
+      margin-top: 10px;
+    }
+
+    .key-box {
+      background: #fff;
+      color: #000;
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin: 20px 0;
+      display: inline-flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      word-break: break-word;
+    }
+
+    .key-text {
+      font-weight: bold;
+      font-size: 1rem;
+    }
+
+    button:not(.menu-toggle) {
+      background: #fff;
+      color: #000;
+      border: none;
+      padding: 12px 18px;
+      font-size: 1rem;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: 0.3s ease;
+      width: 100%;
+    }
+
+    button:hover:not(.menu-toggle) {
+      background: #111;
+      color: #fff;
+    }
+
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #111;
+      padding: 10px 16px;
+      color: #fff;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+      z-index: 999;
+      animation: fadeInNotif 0.3s forwards;
+    }
+
+    @keyframes fadeInNotif {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="bgCanvas"></canvas>
+
+  <div class="menu-toggle" onclick="toggleMenu()">☰</div>
+
+  <div class="menu" id="menu">
+    <button onclick="loadHome()">🏠 Home</button>
+    <button onclick="loadKeys()">🔑 Manage Keys</button>
+    <button onclick="logout()">🚪 Logout</button>
+  </div>
+
+  <div class="container popup-animation" id="main">
+    <h1>Clark KeySystem - Admin Panel</h1>
+    <p>Welcome to the admin panel. You can manage keys below.</p>
+    <h2>All Keys</h2>
+    <div id="keysContainer">
+      {% for key, expiry in keys.items() %}
+        <div class="key-box">
+          <span class="key-text">{{ key }} (Valid until: {{ expiry }})</span>
+          <button onclick="deleteKey('{{ key }}')">Delete</button>
+        </div>
+      {% endfor %}
+    </div>
+    <h2>Create New Key</h2>
+    <button onclick="createKey()">Create Key</button>
+  </div>
+
+  <script>
+    const menu = document.getElementById('menu');
+    function toggleMenu() {
+      menu.classList.toggle('show');
+    }
+
+    function showNotification(text) {
+      const notif = document.createElement("div");
+      notif.className = "notification";
+      notif.textContent = text;
+      document.body.appendChild(notif);
+      setTimeout(() => notif.remove(), 3000);
+    }
+
+    function createKey() {
+      fetch("/create_key", { method: "POST" })
+        .then(res => res.json())
+        .then(data => {
+          if (data.key) {
+            showNotification(`Key created: ${data.key} (Valid until: ${data.expires_at})`);
+            location.reload(); // Reload to show the new key
+          } else {
+            showNotification("Error creating key.");
+          }
+        });
+    }
+
+    function deleteKey(key) {
+      fetch("/delete_key", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ key: key })
+      })
+      .then(res => {
+        if (res.ok) {
+          showNotification(`Key deleted: ${key}`);
+          location.reload(); // Reload to update the key list
+        } else {
+          showNotification("Error deleting key.");
+        }
+      });
+    }
+
+    function logout() {
+      window.location.href = "/logout";
+    }
+
+    const canvas = document.getElementById("bgCanvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const particles = Array.from({ length: 60 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      size: Math.random() * 2 + 1,
+      speedX: (Math.random() - 0.5) * 0.5,
+      speedY: (Math.random() - 0.5) * 0.5,
+      color: Math.random() > 0.5 ? '#fff' : '#000'
+    }));
+
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let p of particles) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+        p.x += p.speedX;
+        p.y += p.speedY;
+        if (p.x < 0) p.x = canvas.width;
+        if (p.x > canvas.width) p.x = 0;
+        if (p.y < 0) p.y = canvas.height;
+        if (p.y > canvas.height) p.y = 0;
+      }
+      requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    window.addEventListener("resize", () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+  </script>
+</body>
+</html>
