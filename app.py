@@ -7,7 +7,6 @@ import os
 app = Flask(__name__, static_folder="public")
 TOKENS = {}
 SECRET_KEY = "p"
-OWNER_IP = "123.123.123.123"  # Replace this with your real IP address
 
 # Helper
 def get_device_id():
@@ -86,22 +85,13 @@ def validate_key():
         return jsonify({"valid": True, "expires_at": KEYS[key]})
     return jsonify({"valid": False}), 404
 
+# ✅ PUBLIC loader endpoint — everyone gets gui.lua
 @app.route("/loader")
 def loader():
-    ip = request.headers.get("X-Forwarded-For", request.remote_addr)
-
-    if ip == OWNER_IP:
-        # Owner sees full script
-        if os.path.exists("gui_owner.lua"):
-            with open("gui_owner.lua", "r", encoding="utf-8") as f:
-                return Response(f.read(), mimetype="text/plain")
-        return "Owner GUI not found", 404
-    else:
-        # Public sees limited script
-        if os.path.exists("gui.lua"):
-            with open("gui.lua", "r", encoding="utf-8") as f:
-                return Response(f.read(), mimetype="text/plain")
-        return "GUI not found", 404
+    if os.path.exists("gui.lua"):
+        with open("gui.lua", "r", encoding="utf-8") as f:
+            return Response(f.read(), mimetype="text/plain")
+    return "GUI not found", 404
 
 @app.route("/<path:path>")
 def static_file(path):
