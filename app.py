@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import uuid
 import os
 
-app = Flask(__name__, static_folder="public")
+app = Flask(__name__, static_folder="public", template_folder="public")  # Specify template_folder
 TOKENS = {}
 KEYS = {}
 USED_IPS = {}
