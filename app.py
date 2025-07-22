@@ -9,8 +9,7 @@ KEYS = {}
 USED_IPS = {}
 SECRET_KEY = "p"
 ADMIN_USERNAME = "lark"  # Set your admin username
-ADMIN_PASSWORD = "proplayer"  # Set your admin password
-logged_in_users = set()  # Track logged-in users
+ADMIN_PASSWORD = "lark"  # Set your admin password
 
 # Helper
 def get_device_id():
