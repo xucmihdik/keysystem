@@ -129,7 +129,7 @@
     <div id="keysContainer">
       {% for key, expiry in keys.items() %}
         <div class="key-box">
-          <span class="key-text">{{ key }} (Valid until: {{ expiry }})</span>
+          <span class="key-text">{{ key }} (Valid until: {{ format_expiry(expiry) }})</span>
           <button onclick="copyKey('{{ key }}')">Copy</button>
           <button onclick="deleteKey('{{ key }}')">Delete</button>
         </div>
@@ -173,11 +173,24 @@
         .then(data => {
           if (data.key) {
             showNotification(`Key created: ${data.key} (Valid until: ${data.expires_at})`);
-            location.reload(); // Reload to show the new key
+            // No reload to keep the user logged in
+            addKeyToContainer(data.key, data.expires_at);
           } else {
             showNotification("Error creating key.");
           }
         });
+    }
+
+    function addKeyToContainer(key, expiry) {
+      const keysContainer = document.getElementById('keysContainer');
+      const keyBox = document.createElement('div');
+      keyBox.className = 'key-box';
+      keyBox.innerHTML = `
+        <span class="key-text">${key} (Valid until: ${formatExpiry(expiry)})</span>
+        <button onclick="copyKey('${key}')">Copy</button>
+        <button onclick="deleteKey('${key}')">Delete</button>
+      `;
+      keysContainer.appendChild(keyBox);
     }
 
     function deleteKey(key) {
@@ -210,6 +223,11 @@
       // Reset the UI to show the login form
       mainContainer.style.display = 'none';
       loginContainer.style.display = 'block';
+    }
+
+    function formatExpiry(expiry) {
+      const date = new Date(expiry);
+      return date.toLocaleString(); // Format to a readable string
     }
 
     const canvas = document.getElementById("bgCanvas");
