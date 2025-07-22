@@ -15,7 +15,7 @@ logged_in_users = set()  # Track logged-in users
 # Helper
 def get_device_id():
     ip = request.remote_addr
-    user_agent = request.headers.get("User -Agent", "")
+    user_agent = request.headers.get("User  -Agent", "")
     return ip + user_agent
 
 @app.route("/")
@@ -102,37 +102,21 @@ def static_file(path):
     return send_from_directory("public", path)
 
 # Panel Route
-@app.route("/panel", methods=["GET", "POST"])
+@app.route("/panel", methods=["GET"])
 def panel():
-    if request.method == "POST":
-        username = request.form.get("username")
-        password = request.form.get("password")
-        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
-            logged_in_users.add(request.remote_addr)  # Track logged-in user
-            return redirect("/panel")
-        return "Invalid credentials", 403
-
-    if request.remote_addr not in logged_in_users:
-        return render_template("login.html")  # Render login page if not logged in
-
-    return render_template("panel.html", keys=KEYS)
+    return render_template("panel.html", keys=KEYS)  # Render the panel without login protection
 
 @app.route("/logout")
 def logout():
-    logged_in_users.discard(request.remote_addr)  # Remove user from logged-in users
     return redirect("/panel")
 
 @app.route("/create_key", methods=["POST"])
 def create_key():
-    if request.remote_addr not in logged_in_users:
-        return jsonify({"error": "Unauthorized"}), 403
     key, expiry = generate_key(request.remote_addr)
     return jsonify({"key": key, "expires_at": expiry})
 
 @app.route("/delete_key", methods=["POST"])
 def delete_key():
-    if request.remote_addr not in logged_in_users:
-        return jsonify({"error": "Unauthorized"}), 403
     key = request.json.get("key")
     if key in KEYS:
         del KEYS[key]
@@ -145,8 +129,6 @@ def delete_key():
 
 @app.route("/all_keys", methods=["GET"])
 def all_keys():
-    if request.remote_addr not in logged_in_users:
-        return jsonify({"error": "Unauthorized"}), 403
     return jsonify(KEYS)
 
 def generate_key(ip):
