@@ -1,17 +1,21 @@
-from flask import Flask, request, jsonify, send_from_directory, redirect, Response
-from keys import KEYS, USED_IPS, generate_key
-from datetime import datetime
+from flask import Flask, request, jsonify, send_from_directory, redirect, Response, render_template
+from datetime import datetime, timedelta
 import uuid
 import os
 
 app = Flask(__name__, static_folder="public")
 TOKENS = {}
+KEYS = {}
+USED_IPS = {}
 SECRET_KEY = "p"
+ADMIN_USERNAME = "admin"  # Set your admin username
+ADMIN_PASSWORD = "password"  # Set your admin password
+logged_in_users = set()  # Track logged-in users
 
 # Helper
 def get_device_id():
     ip = request.remote_addr
-    user_agent = request.headers.get("User-Agent", "")
+    user_agent = request.headers.get("User -Agent", "")
     return ip + user_agent
 
 @app.route("/")
@@ -96,6 +100,61 @@ def loader():
 @app.route("/<path:path>")
 def static_file(path):
     return send_from_directory("public", path)
+
+# Panel Route
+@app.route("/panel", methods=["GET", "POST"])
+def panel():
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+            logged_in_users.add(request.remote_addr)  # Track logged-in user
+            return redirect("/panel")
+        return "Invalid credentials", 403
+
+    if request.remote_addr not in logged_in_users:
+        return render_template("login.html")  # Render login page if not logged in
+
+    return render_template("panel.html", keys=KEYS)
+
+@app.route("/logout")
+def logout():
+    logged_in_users.discard(request.remote_addr)  # Remove user from logged-in users
+    return redirect("/panel")
+
+@app.route("/create_key", methods=["POST"])
+def create_key():
+    if request.remote_addr not in logged_in_users:
+        return jsonify({"error": "Unauthorized"}), 403
+    key, expiry = generate_key(request.remote_addr)
+    return jsonify({"key": key, "expires_at": expiry})
+
+@app.route("/delete_key", methods=["POST"])
+def delete_key():
+    if request.remote_addr not in logged_in_users:
+        return jsonify({"error": "Unauthorized"}), 403
+    key = request.json.get("key")
+    if key in KEYS:
+        del KEYS[key]
+        for ip, k in USED_IPS.items():
+            if k == key:
+                del USED_IPS[ip]
+                break
+        return jsonify({"success": True})
+    return jsonify({"error": "Key not found"}), 404
+
+@app.route("/all_keys", methods=["GET"])
+def all_keys():
+    if request.remote_addr not in logged_in_users:
+        return jsonify({"error": "Unauthorized"}), 403
+    return jsonify(KEYS)
+
+def generate_key(ip):
+    key = f"clark-{uuid.uuid4().hex[:12]}"
+    expires_at = datetime.utcnow() + timedelta(hours=24)
+    KEYS[key] = expires_at.isoformat()
+    USED_IPS[ip] = key
+    return key, expires_at.isoformat()
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
