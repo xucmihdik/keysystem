@@ -1,9 +1,10 @@
-from flask import Flask, request, jsonify, send_from_directory, redirect, Response, render_template
+from flask import Flask, request, jsonify, send_from_directory, redirect, Response, render_template, session
 from datetime import datetime, timedelta
 import uuid
 import os
 
-app = Flask(__name__, static_folder="public", template_folder="public")  # Specify template_folder
+app = Flask(__name__, static_folder="public", template_folder="public")
+app.secret_key = "your_secret_key"  # Set a secret key for session management
 TOKENS = {}
 KEYS = {}
 USED_IPS = {}
@@ -112,6 +113,7 @@ def panel():
         username = request.form.get("username")
         password = request.form.get("password")
         if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+            session['logged_in'] = True  # Set session variable for logged in user
             return redirect("/panel/dashboard")  # Redirect to the dashboard on successful login
         else:
             return render_template("panel.html", error="Invalid credentials")  # Render panel with error
@@ -121,13 +123,13 @@ def panel():
 # Dashboard Route
 @app.route("/panel/dashboard")
 def dashboard():
-    # Check if the user is logged in
-    if request.method == "GET":
-        return render_template("dashboard.html", keys=KEYS, format_expiry=format_expiry)  # Render dashboard with keys
-    return redirect("/panel")  # Redirect to login if not logged in
+    if not session.get('logged_in'):  # Check if user is logged in
+        return redirect("/panel")  # Redirect to login if not logged in
+    return render_template("dashboard.html", keys=KEYS, format_expiry=format_expiry)  # Render dashboard with keys
 
 @app.route("/logout")
 def logout():
+    session.pop('logged_in', None)  # Remove the logged in session
     return redirect("/panel")
 
 @app.route("/create_key", methods=["POST"])
