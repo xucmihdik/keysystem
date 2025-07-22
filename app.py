@@ -14,7 +14,7 @@ ADMIN_PASSWORD = "password"  # Set your admin password
 # Helper
 def get_device_id():
     ip = request.remote_addr
-    user_agent = request.headers.get("User -Agent", "")
+    user_agent = request.headers.get("User-Agent", "")
     return ip + user_agent
 
 def format_expiry(expiry):
@@ -105,18 +105,23 @@ def loader():
 def static_file(path):
     return send_from_directory("public", path)
 
-# Panel Route
+# Panel Login Route
 @app.route("/panel", methods=["GET", "POST"])
 def panel():
     if request.method == "POST":
         username = request.form.get("username")
         password = request.form.get("password")
         if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
-            return render_template("panel.html", keys=KEYS, format_expiry=format_expiry)  # Render panel with keys
+            return redirect("/panel/dashboard")  # Redirect to the dashboard on successful login
         else:
-            return render_template("panel.html", error="Invalid credentials", keys={})  # Render panel with error
+            return render_template("panel.html", error="Invalid credentials")  # Render panel with error
 
-    return render_template("panel.html", keys={})  # Render panel with empty keys
+    return render_template("panel.html")  # Render login panel
+
+# Dashboard Route
+@app.route("/panel/dashboard")
+def dashboard():
+    return render_template("dashboard.html", keys=KEYS, format_expiry=format_expiry)  # Render dashboard with keys
 
 @app.route("/logout")
 def logout():
