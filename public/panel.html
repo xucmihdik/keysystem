@@ -127,6 +127,11 @@
       justify-content: space-between; /* Space buttons evenly */
       width: 100%; /* Ensure it takes full width */
     }
+
+    .error {
+      color: red;
+      display: none; /* Initially hidden */
+    }
   </style>
 </head>
 <body>
@@ -134,11 +139,12 @@
 
   <div class="container" id="loginContainer">
     <h1>Admin Login</h1>
-    <form id="loginForm">
-      <input type="text" id="username" placeholder="Username" required />
-      <input type="password" id="password" placeholder="Password" required />
+    <form id="loginForm" method="POST" action="/panel">
+      <input type="text" name="username" placeholder="Username" required />
+      <input type="password" name="password" placeholder="Password" required />
       <button type="submit">Login</button>
     </form>
+    <div id="loginError" class="error">Invalid credentials</div>
   </div>
 
   <div class="container" id="main" style="display: none;">
@@ -170,18 +176,23 @@
     const loginForm = document.getElementById('loginForm');
     const mainContainer = document.getElementById('main');
     const loginContainer = document.getElementById('loginContainer');
+    const loginError = document.getElementById('loginError');
+
+    // Show the login container initially
+    loginContainer.style.display = 'block';
 
     loginForm.addEventListener('submit', function(event) {
       event.preventDefault();
-      const username = document.getElementById('username').value;
-      const password = document.getElementById('password').value;
+      const formData = new FormData(loginForm);
+      const username = formData.get('username');
+      const password = formData.get('password');
 
       // Check credentials
       if (username === "admin" && password === "password") {  // Replace with your actual credentials
         loginContainer.style.display = 'none';
         mainContainer.style.display = 'block';
       } else {
-        showNotification("Invalid credentials");
+        loginError.style.display = 'block'; // Show error message
       }
     });
 
@@ -329,18 +340,3 @@
         p.x += p.speedX;
         p.y += p.speedY;
         if (p.x < 0) p.x = canvas.width;
-        if (p.x > canvas.width) p.x = 0;
-        if (p.y < 0) p.y = canvas.height;
-        if (p.y > canvas.height) p.y = 0;
-      }
-      requestAnimationFrame(animateParticles);
-    }
-    animateParticles();
-
-    window.addEventListener("resize", () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    });
-  </script>
-</body>
-</html>
