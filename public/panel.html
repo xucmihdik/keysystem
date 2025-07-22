@@ -128,7 +128,7 @@
     <h2>All Keys</h2>
     <div id="keysContainer">
       {% for key, expiry in keys.items() %}
-        <div class="key-box">
+        <div class="key-box" id="key-{{ key }}">
           <span class="key-text">{{ key }} (Valid until: {{ format_expiry(expiry) }})</span>
           <button onclick="copyKey('{{ key }}')">Copy</button>
           <button onclick="deleteKey('{{ key }}')">Delete</button>
@@ -173,7 +173,6 @@
         .then(data => {
           if (data.key) {
             showNotification(`Key created: ${data.key} (Valid until: ${data.expires_at})`);
-            // No reload to keep the user logged in
             addKeyToContainer(data.key, data.expires_at);
           } else {
             showNotification("Error creating key.");
@@ -185,6 +184,7 @@
       const keysContainer = document.getElementById('keysContainer');
       const keyBox = document.createElement('div');
       keyBox.className = 'key-box';
+      keyBox.id = `key-${key}`;
       keyBox.innerHTML = `
         <span class="key-text">${key} (Valid until: ${formatExpiry(expiry)})</span>
         <button onclick="copyKey('${key}')">Copy</button>
@@ -204,7 +204,10 @@
       .then(res => {
         if (res.ok) {
           showNotification(`Key deleted: ${key}`);
-          location.reload(); // Reload to update the key list
+          const keyBox = document.getElementById(`key-${key}`);
+          if (keyBox) {
+            keyBox.remove(); // Remove the key box from the UI
+          }
         } else {
           showNotification("Error deleting key.");
         }
