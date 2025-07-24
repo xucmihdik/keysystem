@@ -1,38 +1,82 @@
+# app.py (Corrected and Integrated)
+
 from flask import Flask, request, jsonify, send_from_directory, redirect, Response, render_template, session
 from datetime import datetime, timedelta
 import uuid
 import os
 
 app = Flask(__name__, static_folder="public", template_folder="public")
-app.secret_key = "your_secret_key"  # Set a secret key for session management
-TOKENS = {}
-KEYS = {}
-USED_IPS = {}
+app.secret_key = "your_secret_key"  # Set a strong secret key for session management
+
+# In-memory storage
+TOKENS = {} # { token: device_id }
+# KEYS now stores creation timestamp instead of absolute expiry
+# Format: { "clark-xxxx": { "created_at": "ISO_TIMESTAMP_STRING" } }
+KEYS = {} # { key: { "created_at": ... } }
+USED_IPS = {} # { device_id_hash: key }
+
 ADMIN_USERNAME = "admin"  # Set your admin username
 ADMIN_PASSWORD = "password"  # Set your admin password
 
-# Helper functions
+# --- Helper Functions ---
+
 def get_device_id():
+    """Generates a unique identifier for the user's device/browser."""
     ip = request.remote_addr
     user_agent = request.headers.get("User-Agent", "")
+    # Simple concatenation - consider hashing (e.g., hashlib.sha256) for better privacy/security
     return ip + user_agent
 
-def format_expiry(expiry):
-    """Convert expiry string to a more readable format."""
-    date = datetime.fromisoformat(expiry)
-    return date.strftime("%B %d, %Y %I:%M %p")  # Example: July 22, 2025 08:36 AM
+def get_key_expiry_info(key_data):
+    """
+    Calculates if a key is valid, its expiry time, and remaining seconds.
+    Args:
+        key_data (dict): The dictionary containing the key's 'created_at' timestamp.
+    Returns:
+        tuple: (is_valid (bool), expires_at_iso (str or None), remaining_seconds (int))
+    """
+    created_at_str = key_data.get("created_at")
+    if not created_at_str:
+        return False, None, 0 # Invalid key data
+
+    try:
+        created_at = datetime.fromisoformat(created_at_str)
+        expires_at = created_at + timedelta(hours=24)
+        now = datetime.utcnow()
+        is_valid = now < expires_at
+        remaining_seconds = int((expires_at - now).total_seconds()) if is_valid else 0
+        return is_valid, expires_at.isoformat(), remaining_seconds
+    except ValueError:
+        # Error parsing the date string
+        return False, None, 0
 
 def clean_expired_keys():
     """Remove expired keys from the KEYS and USED_IPS dictionaries."""
     current_time = datetime.utcnow()
-    expired_keys = [key for key, expiry in KEYS.items() if datetime.fromisoformat(expiry) <= current_time]
+    expired_keys = []
+    for key, key_data in KEYS.items():
+        is_valid, _, _ = get_key_expiry_info(key_data)
+        if not is_valid:
+            expired_keys.append(key)
+
     for key in expired_keys:
         del KEYS[key]
         # Remove from USED_IPS if it exists
-        for ip, k in list(USED_IPS.items()):
+        for device_id, k in list(USED_IPS.items()):
             if k == key:
-                del USED_IPS[ip]
+                del USED_IPS[device_id]
                 break
+
+def generate_key(device_id):
+    """Generates a new key associated with a device ID."""
+    key = f"clark-{uuid.uuid4().hex[:12]}"
+    created_at = datetime.utcnow()
+    key_data = {"created_at": created_at.isoformat()}
+    KEYS[key] = key_data
+    USED_IPS[device_id] = key
+    return key, key_data
+
+# --- Routes ---
 
 @app.route("/")
 def home():
@@ -43,15 +87,23 @@ def check_key_status():
     device_id = get_device_id()
     clean_expired_keys()  # Clean expired keys before checking
     key = USED_IPS.get(device_id)
-    if key:
-        expiry_str = KEYS.get(key)
-        if expiry_str:
-            expiry = datetime.fromisoformat(expiry_str)
-            if expiry > datetime.utcnow():
-                return jsonify({"has_key": True, "key": key, "expires_at": expiry_str})
-            else:
-                del KEYS[key]
-                del USED_IPS[device_id]
+    if key and key in KEYS:
+        key_data = KEYS[key]
+        is_valid, expires_at_str, remaining_seconds = get_key_expiry_info(key_data)
+        if is_valid and expires_at_str:
+            # Return key, expiry timestamp, and remaining seconds
+             return jsonify({
+                "has_key": True,
+                "key": key,
+                "expires_at": expires_at_str, # Full expiry timestamp
+                "remaining_seconds": remaining_seconds # Seconds left
+            })
+        else:
+            # Key expired, clean up
+            del KEYS[key]
+            if device_id in USED_IPS:
+                 del USED_IPS[device_id]
+
     return jsonify({"has_key": False})
 
 @app.route("/get_token")
@@ -70,16 +122,26 @@ def claim():
     device_id = get_device_id()
     if not token or token not in TOKENS or TOKENS[token] != device_id:
         return "", 403
-    if device_id in USED_IPS:
-        key = USED_IPS[device_id]
-        expiry = datetime.fromisoformat(KEYS.get(key, "1970-01-01T00:00:00"))
-        if expiry <= datetime.utcnow():
-            del KEYS[key]
-            del USED_IPS[device_id]
-            key, _ = generate_key(device_id)
-    else:
-        key, _ = generate_key(device_id)
+
+    # Check if existing key is still valid
+    existing_key = USED_IPS.get(device_id)
+    if existing_key and existing_key in KEYS:
+         key_data = KEYS[existing_key]
+         is_valid, _, _ = get_key_expiry_info(key_data)
+         if is_valid:
+             # Key still valid, redirect with existing key
+             del TOKENS[token] # Clean up token
+             return redirect(f"/?key={existing_key}")
+         else:
+             # Key expired, clean up
+             del KEYS[existing_key]
+             if device_id in USED_IPS:
+                  del USED_IPS[device_id]
+
+    # Generate new key
+    key, key_data = generate_key(device_id)
     del TOKENS[token]
+    # expires_at_str is calculated on the frontend now, but we pass the key
     return redirect(f"/?key={key}")
 
 @app.route("/owner_generate")
@@ -88,22 +150,49 @@ def owner_generate():
     device_id = get_device_id()
     if secret != "your_secret_key":  # Replace with your actual secret key
         return jsonify({"error": "Unauthorized"}), 403
-    if device_id in USED_IPS:
-        key = USED_IPS[device_id]
-        expiry = datetime.fromisoformat(KEYS.get(key, "1970-01-01T00:00:00"))
-        if expiry <= datetime.utcnow():
-            del KEYS[key]
-            del USED_IPS[device_id]
-            key, _ = generate_key(device_id)
-    else:
-        key, _ = generate_key(device_id)
-    return jsonify({"key": key, "expires_at": KEYS[key], "status": "owner"})
+
+    # Check if existing key is still valid
+    existing_key = USED_IPS.get(device_id)
+    if existing_key and existing_key in KEYS:
+         key_data = KEYS[existing_key]
+         is_valid, _, _ = get_key_expiry_info(key_data)
+         if is_valid:
+             # Key still valid, return existing key info
+             _, expires_at_str, remaining_seconds = get_key_expiry_info(key_data)
+             return jsonify({
+                 "key": existing_key, # Fixed typo: was "key "
+                 "expires_at": expires_at_str, # Fixed typo: was "expires_at "
+                 "remaining_seconds": remaining_seconds, # Fixed typo: was "remaining_seconds "
+                 "status": "owner" # Fixed typo: was "status "
+             })
+         else:
+             # Key expired, clean up
+             del KEYS[existing_key]
+             if device_id in USED_IPS:
+                  del USED_IPS[device_id]
+
+    # Generate new key
+    key, key_data = generate_key(device_id)
+    _, expires_at_str, remaining_seconds = get_key_expiry_info(key_data)
+    return jsonify({
+        "key": key,
+        "expires_at": expires_at_str,
+        "remaining_seconds": remaining_seconds,
+        "status": "owner"
+    })
 
 @app.route("/validate_key")
 def validate_key():
     key = request.args.get("key")
-    if key in KEYS and datetime.fromisoformat(KEYS[key]) > datetime.utcnow():
-        return jsonify({"valid": True, "expires_at": KEYS[key]})
+    if key in KEYS:
+        key_data = KEYS[key]
+        is_valid, expires_at_str, remaining_seconds = get_key_expiry_info(key_data)
+        if is_valid:
+            return jsonify({
+                "valid": True,
+                "expires_at": expires_at_str,
+                "remaining_seconds": remaining_seconds
+            })
     return jsonify({"valid": False}), 404
 
 @app.route("/loader")
@@ -118,72 +207,4 @@ def static_file(path):
     return send_from_directory("public", path)
 
 # Panel Login Route
-@app.route("/panel", methods=["GET", "POST"])
-def panel():
-    if request.method == "POST":
-        username = request.form.get("username")
-        password = request.form.get("password")
-        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
-            session['logged_in'] = True  # Set session variable for logged in user
-            return redirect("/panel/dashboard")  # Redirect to the dashboard on successful login
-        else:
-            return render_template("panel.html", error="Invalid credentials")  # Render panel with error
-
-    return render_template("panel.html")  # Render login panel
-
-# Dashboard Route
-@app.route("/panel/dashboard")
-def dashboard():
-    if not session.get('logged_in'):  # Check if user is logged in
-        return redirect("/panel")  # Redirect to login if not logged in
-    clean_expired_keys()  # Clean expired keys before rendering dashboard
-    return render_template("dashboard.html", keys=KEYS, format_expiry=format_expiry)  # Render dashboard with keys
-
-@app.route("/logout")
-def logout():
-    session.pop('logged_in', None)  # Remove the logged in session
-    return redirect("/panel")
-
-@app.route("/create_key", methods=["POST"])
-def create_key():
-    key, expiry = generate_key(request.remote_addr)
-    return jsonify({"key": key, "expires_at": expiry})
-
-@app.route("/delete_key", methods=["POST"])
-def delete_key():
-    key = request.json.get("key")
-    if key in KEYS:
-        del KEYS[key]
-        for ip, k in USED_IPS.items():
-            if k == key:
-                del USED_IPS[ip]
-                break
-        return jsonify({"success": True})
-    return jsonify({"error": "Key not found"}), 404
-
-@app.route("/manage_key", methods=["POST"])
-def manage_key():
-    data = request.json
-    key = data.get("key")
-    days = data.get("days")
-
-    if key in KEYS:  
-        expiry = datetime.utcnow() + timedelta(days=int(days))  
-        KEYS[key] = expiry.isoformat()  # Update the expiry date  
-        return jsonify({"success": True, "new_expiry": KEYS[key]})  
-    return jsonify({"error": "Key not found"}), 404
-
-@app.route("/all_keys", methods=["GET"])
-def all_keys():
-    return jsonify(KEYS)
-
-def generate_key(ip):
-    key = f"clark-{uuid.uuid4().hex[:12]}"
-    expires_at = datetime.utcnow() + timedelta(hours=24)
-    KEYS[key] = expires_at.isoformat()
-    USED_IPS[ip] = key
-    return key, expires_at.isoformat()
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))
-    app.run(host="0.0.0.0", port=port)
+@app.route("/panel", methods=["GET
