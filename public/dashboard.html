@@ -152,7 +152,6 @@
   </div>
 
   <script>
-    // Track all active countdown intervals
     const countdownIntervals = {};
 
     function showNotification(text) {
@@ -294,22 +293,18 @@
     }
 
     function startCountdown(key, expiry) {
-      // Clear any existing countdown for this key
       clearCountdown(key);
       
       const countdownEl = document.getElementById(`countdown-${key}`);
       const expiryDate = new Date(expiry);
       
-      // Immediate first update
       updateCountdown();
       
-      // Store the interval
       countdownIntervals[key] = setInterval(updateCountdown, 1000);
-
+      
       function updateCountdown() {
         const now = new Date();
-        // Use getTime() for timezone-independent calculation
-        const diff = expiryDate.getTime() - now.getTime();
+        const diff = expiryDate - now;
         
         if (diff <= 0) {
           countdownEl.textContent = "EXPIRED";
@@ -317,17 +312,14 @@
           return;
         }
         
-        // Calculate total hours, minutes, seconds
-        const totalSeconds = Math.floor(diff / 1000);
-        const hours = Math.floor(totalSeconds / 3600);
-        const minutes = Math.floor((totalSeconds % 3600) / 60);
-        const seconds = totalSeconds % 60;
+        // Calculate days, hours, minutes, seconds
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
         
-        // Display in 24-hour format (HH:MM:SS)
-        countdownEl.textContent = 
-          `Expires in: ${String(hours).padStart(2, "0")}:` +
-          `${String(minutes).padStart(2, "0")}:` +
-          `${String(seconds).padStart(2, "0")}`;
+        // Display format: 1d 16h 0m 0s (not 24h format)
+        countdownEl.textContent = `Expires in: ${days}d ${hours}h ${minutes}m ${seconds}s`;
       }
     }
 
