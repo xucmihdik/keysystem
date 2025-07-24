@@ -268,7 +268,8 @@
           if (data.has_key) {
             showKey(data.key, data.expires_at, true);
           } else {
-            window.location.href = "https://link-hub.net/1367787/WmEGaMKAKlRJ";
+            document.getElementById("status").textContent = "❌ No key found. You can create a new one.";
+            document.getElementById("main").innerHTML += `<button onclick="loadGetKey()">🔑 Create New Key</button>`;
           }
         })
         .catch(() => {
@@ -367,6 +368,8 @@
 
         if (diff <= 0) {
           countdownEl.textContent = "Expired";
+          document.getElementById("status").textContent = "Your key has expired. You can create a new one.";
+          document.getElementById("main").innerHTML += `<button onclick="loadGetKey()">🔑 Create New Key</button>`;
           return;
         }
 
