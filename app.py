@@ -23,6 +23,18 @@ def format_expiry(expiry):
     date = datetime.fromisoformat(expiry)
     return date.strftime("%B %d, %Y %I:%M %p")  # Example: July 22, 2025 08:36 AM
 
+def clean_expired_keys():
+    """Remove expired keys from the KEYS and USED_IPS dictionaries."""
+    current_time = datetime.utcnow()
+    expired_keys = [key for key, expiry in KEYS.items() if datetime.fromisoformat(expiry) <= current_time]
+    for key in expired_keys:
+        del KEYS[key]
+        # Remove from USED_IPS if it exists
+        for ip, k in list(USED_IPS.items()):
+            if k == key:
+                del USED_IPS[ip]
+                break
+
 @app.route("/")
 def home():
     return send_from_directory("public", "index.html")
@@ -30,6 +42,7 @@ def home():
 @app.route("/check_key_status")
 def check_key_status():
     device_id = get_device_id()
+    clean_expired_keys()  # Clean expired keys before checking
     key = USED_IPS.get(device_id)
     if key:
         expiry_str = KEYS.get(key)
@@ -124,6 +137,7 @@ def panel():
 def dashboard():
     if not session.get('logged_in'):  # Check if user is logged in
         return redirect("/panel")  # Redirect to login if not logged in
+    clean_expired_keys()  # Clean expired keys before rendering dashboard
     return render_template("dashboard.html", keys=KEYS, format_expiry=format_expiry)  # Render dashboard with keys
 
 @app.route("/logout")
