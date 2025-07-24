@@ -1,351 +1,413 @@
-<!DOCTYPE html>  <html lang="en">  
-<head>  
-  <meta charset="UTF-8" />  
-  <meta name="viewport" content="width=device-width, initial-scale=1" />  
-  <title>Clark KeySystem</title>  
-  <style>  
-    * {  
-      box-sizing: border-box;  
-      margin: 0;  
-      padding: 0;  
-    }  html, body {  
-  height: 100%;  
-  width: 100%;  
-  overflow: hidden;  
-  font-family: 'Segoe UI', sans-serif;  
-  background: #000;  
-  display: flex;  
-  justify-content: center;  
-  align-items: center;  
-  position: relative;  
-}  
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Clark KeySystem</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      font-family: 'Segoe UI', sans-serif;
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 0;
+    }
+    .menu-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 101;
+      cursor: pointer;
+      font-size: 30px;
+      color: white;
+      user-select: none;
+    }
+    .menu {
+      position: fixed;
+      top: 60px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.95);
+      border: 2px solid #fff;
+      border-radius: 10px;
+      padding: 10px;
+      display: none;
+      flex-direction: column;
+      width: 170px;
+      box-shadow: 0 0 15px rgba(255,255,255,0.3);
+      z-index: 100;
+      animation: fadeIn 0.25s ease;
+    }
+    .menu.show {
+      display: flex;
+    }
+    .menu button {
+      background-color: transparent !important;
+      -webkit-appearance: none;
+      appearance: none;
+      border: none;
+      color: #ffffff !important;
+      font-weight: bold;
+      padding: 12px 10px;
+      text-align: left;
+      font-size: 17px;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: background 0.2s ease;
+      text-shadow: 0 0 5px rgba(255,255,255,0.6);
+    }
+    .menu button:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff !important;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .container {
+      z-index: 2;
+      background: rgba(0, 0, 0, 0.75);
+      border-radius: 16px;
+      padding: 24px 20px;
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+      border: 2px solid #fff;
+      box-shadow: 0 0 30px rgba(255, 255, 255, 0.6);
+    }
+    .popup-animation {
+      animation: popup 0.5s ease;
+    }
+    @keyframes popup {
+      from { opacity: 0; transform: scale(0.8); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    h1 {
+      font-size: 1.7rem;
+      margin-bottom: 12px;
+      color: #fff;
+    }
+    p {
+      color: #ccc;
+      margin-top: 10px;
+    }
+    .key-box {
+      background: #fff;
+      color: #000;
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin: 20px 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      word-break: break-word;
+    }
+    .key-text {
+      font-weight: bold;
+      font-size: 1rem;
+    }
+    .copy-icon {
+      width: 22px;
+      height: 22px;
+      cursor: pointer;
+    }
+    button:not(.menu-toggle) {
+      background: #fff;
+      color: #000;
+      border: none;
+      padding: 12px 18px;
+      font-size: 1rem;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: 0.3s ease;
+      width: 100%;
+    }
+    button:hover:not(.menu-toggle) {
+      background: #111;
+      color: #fff;
+    }
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #111;
+      padding: 10px 16px;
+      color: #fff;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+      z-index: 999;
+      animation: fadeInNotif 0.3s forwards;
+    }
+    @keyframes fadeInNotif {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    /* Style for the countdown display */
+    #countdown {
+       font-weight: bold;
+       color: #ffcc00; /* Example color */
+    }
+  </style>
+</head>
+<body>
+  <canvas id="bgCanvas"></canvas>
+  <div class="menu-toggle" onclick="toggleMenu()">☰</div>
+  <div class="menu" id="menu">
+    <button onclick="loadHome()">🏠 Home</button>
+    <button onclick="loadGetKey()">🔑 Get Key</button>
+    <button onclick="loadGetScript()">📜 Get Script</button>
+    <button onclick="loadInfo()">👤 Credits</button>
+  </div>
+  <div class="container popup-animation" id="main">
+    <h1>Clark KeySystem</h1>
+    <p>Welcome! Thanks for using my script — hope it helps you a lot.<br>
+    For updates or help, feel free to join my <a href="https://discord.gg/AhzY5DCktP" style="color: #00f;">Discord Server</a>.</p>
+  </div>
+  <script>
+    const menu = document.getElementById('menu');
+    function toggleMenu() {
+      menu.classList.toggle('show');
+    }
+    function animateContainer() {
+      const container = document.getElementById("main");
+      container.classList.remove("popup-animation");
+      void container.offsetWidth; // Trigger reflow
+      container.classList.add("popup-animation");
+    }
+    function showNotification(text) {
+      const notif = document.createElement("div");
+      notif.className = "notification";
+      notif.textContent = text;
+      document.body.appendChild(notif);
+      setTimeout(() => notif.remove(), 3000);
+    }
+    function loadHome() {
+      document.getElementById("main").innerHTML = `
+        <h1>Clark KeySystem</h1>
+        <p>Welcome! Thanks for using my script — hope it helps you a lot.<br>
+        For updates or help, feel free to join my <a href="https://discord.gg/AhzY5DCktP" style="color: #00f;">Discord</a>.</p>
+      `;
+      animateContainer();
+      toggleMenu();
+    }
+    function loadGetKey() {
+      document.getElementById("main").innerHTML = `
+        <h1>Clark KeySystem</h1>
+        <p id="status">Click the button below to get your key</p>
+        <button onclick="checkStatus()">🔑 Get Key</button>
+      `;
+      animateContainer();
+      toggleMenu();
+    }
+    function loadGetScript() {
+      document.getElementById("main").innerHTML = `
+        <h1>📜 Script</h1>
+        <p>Click the button below to copy the script</p>
+        <div class="key-box">
+          <span class="key-text" id="scriptCode">loadstring(game:HttpGet("https://clark-keysystem.onrender.com/loader"))()</span>
+        </div>
+        <button onclick="copyScript()">📋 Copy Script</button>
+      `;
+      animateContainer();
+      toggleMenu();
+    }
+    function loadInfo() {
+      document.getElementById("main").innerHTML = `
+        <h1>👤 Credits</h1>
+        <p>Developed by .6uzi (Discord)</p>
+      `;
+      animateContainer();
+      toggleMenu();
+    }
 
-canvas {  
-  position: absolute;  
-  top: 0;  
-  left: 0;  
-  z-index: 0;  
-}  
+    // --- Key Status and Display Logic ---
+    function checkStatus() {
+      document.getElementById("status").textContent = "⏳ Checking key status...";
+      fetch("/check_key_status")
+        .then(res => {
+            if (!res.ok) {
+                throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+        })
+        .then(data => {
+          console.log("Check Status Response:", data); // Debug log
+          if (data.has_key && data.key && data.remaining_seconds !== undefined) {
+            showKey(data.key, data.expires_at, data.remaining_seconds, true); // isOld = true
+          } else {
+            window.location.href = "https://link-hub.net/1367787/WmEGaMKAKlRJ";
+          }
+        })
+        .catch(err => {
+           console.error("Check Status Error:", err); // Debug log
+          document.getElementById("status").textContent = "❌ Network error.";
+        });
+    }
 
-.menu-toggle {  
-  position: fixed;  
-  top: 20px;  
-  right: 20px;  
-  z-index: 101;  
-  cursor: pointer;  
-  font-size: 30px;  
-  color: white;  
-  user-select: none;  
-}  
+    // --- Countdown Logic ---
+    let countdownInterval = null; // Variable to hold the interval ID
 
-.menu {  
-  position: fixed;  
-  top: 60px;  
-  right: 20px;  
-  background: rgba(0, 0, 0, 0.95);  
-  border: 2px solid #fff;  
-  border-radius: 10px;  
-  padding: 10px;  
-  display: none;  
-  flex-direction: column;  
-  width: 170px;  
-  box-shadow: 0 0 15px rgba(255,255,255,0.3);  
-  z-index: 100;  
-  animation: fadeIn 0.25s ease;  
-}  
+    function showKey(rawKey, expiryISO, remainingSeconds, isOld) {
+      // Clear any existing countdown interval for this display
+      if (countdownInterval) {
+         clearInterval(countdownInterval);
+         countdownInterval = null;
+      }
 
-.menu.show {  
-  display: flex;  
-}  
+      let key = rawKey.startsWith("clark-") ? rawKey : `clark-${rawKey}`;
+      key = key.replace(/^clark-clark-/, "clark-");
 
-.menu button {  
-  background-color: transparent !important;  
-  -webkit-appearance: none;  
-  appearance: none;  
-  border: none;  
-  color: #ffffff !important;  
-  font-weight: bold;  
-  padding: 12px 10px;  
-  text-align: left;  
-  font-size: 17px;  
-  cursor: pointer;  
-  border-radius: 6px;  
-  transition: background 0.2s ease;  
-  text-shadow: 0 0 5px rgba(255,255,255,0.6);  
-}  
+      // Parse the expiry date for display (if needed, though we have countdown)
+      const expiryDate = new Date(expiryISO);
+      const formattedExpiry = expiryDate.toLocaleString(); // Or use a specific format
 
-.menu button:hover {  
-  background: rgba(255, 255, 255, 0.1);  
-  color: #fff !important;  
-}  
+      document.getElementById("main").innerHTML = `
+        <h1>${isOld ? "🔁 Key already created" : "✅ Key Generated!"}</h1>
+        <div class="key-box">
+          <span class="key-text">${key}</span>
+          <img src="https://files.catbox.moe/qnfp07.png" alt="Copy" class="copy-icon" onclick="copyKey('${key}')">
+        </div>
+        <p>⏳ Valid until: ${formattedExpiry}</p>
+        <p>⏳ Time remaining: <span id="countdown">${formatCountdown(remainingSeconds)}</span></p>
+        <p><small>(Refresh page if countdown seems stuck)</small></p>
+      `;
+      animateContainer();
+      copyKey(key); // Copy key automatically
 
-@keyframes fadeIn {  
-  from { opacity: 0; transform: translateY(-8px); }  
-  to { opacity: 1; transform: translateY(0); }  
-}  
+      // Start the countdown
+      startCountdown(remainingSeconds);
+    }
 
-.container {  
-  z-index: 2;  
-  background: rgba(0, 0, 0, 0.75);  
-  border-radius: 16px;  
-  padding: 24px 20px;  
-  width: 90%;  
-  max-width: 400px;  
-  text-align: center;  
-  border: 2px solid #fff;  
-  box-shadow: 0 0 30px rgba(255, 255, 255, 0.6);  
-}  
+    function formatCountdown(totalSeconds) {
+       if (totalSeconds <= 0) return "Expired";
+       const hours = Math.floor(totalSeconds / 3600);
+       const minutes = Math.floor((totalSeconds % 3600) / 60);
+       const seconds = Math.floor(totalSeconds % 60);
+       return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
 
-.popup-animation {  
-  animation: popup 0.5s ease;  
-}  
+    function startCountdown(initialSeconds) {
+       let secondsLeft = initialSeconds;
+       const countdownElement = document.getElementById('countdown');
 
-@keyframes popup {  
-  from { opacity: 0; transform: scale(0.8); }  
-  to { opacity: 1; transform: scale(1); }  
-}  
+       // Update immediately
+       if (countdownElement) {
+          countdownElement.textContent = formatCountdown(secondsLeft);
+       }
 
-h1 {  
-  font-size: 1.7rem;  
-  margin-bottom: 12px;  
-  color: #fff;  
-}  
+       // Update every second
+       countdownInterval = setInterval(() => {
+           secondsLeft--;
+           if (countdownElement) {
+               countdownElement.textContent = formatCountdown(secondsLeft);
+           }
+           // Optional: Add logic when countdown hits zero (e.g., disable buttons, show message)
+           if (secondsLeft <= 0) {
+               clearInterval(countdownInterval);
+               countdownInterval = null;
+               if(countdownElement) {
+                  countdownElement.textContent = "Expired";
+                  // Optionally reload the key status check or show a message
+                  // loadGetKey(); // Example: Reload the "Get Key" view
+               }
+               // Note: The backend will clean up expired keys; frontend just shows it.
+           }
+       }, 1000);
+    }
 
-p {  
-  color: #ccc;  
-  margin-top: 10px;  
-}  
+    function copyKey(key) {
+      navigator.clipboard.writeText(key)
+        .then(() => showNotification("✅ Key copied to clipboard!"))
+        .catch(() => showNotification("❌ Failed to copy key."));
+    }
 
-.key-box {  
-  background: #fff;  
-  color: #000;  
-  border-radius: 10px;  
-  padding: 12px 16px;  
-  margin: 20px 0;  
-  display: inline-flex;  
-  align-items: center;  
-  gap: 10px;  
-  word-break: break-word;  
-}  
+    function copyScript() {
+      const script = document.getElementById("scriptCode").textContent;
+      navigator.clipboard.writeText(script)
+        .then(() => showNotification("✅ Script copied to clipboard!"))
+        .catch(() => showNotification("❌ Failed to copy script."));
+    }
 
-.key-text {  
-  font-weight: bold;  
-  font-size: 1rem;  
-}  
+    // Handle key passed in URL (e.g., after claim)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has("key")) {
+       const keyFromUrl = urlParams.get("key");
+       // Fetch details for the key in the URL to get expiry and remaining time
+       fetch(`/validate_key?key=${encodeURIComponent(keyFromUrl)}`)
+         .then(res => {
+             if(res.ok) return res.json();
+             else throw new Error("Invalid key from URL");
+         })
+         .then(data => {
+             if(data.valid && data.remaining_seconds !== undefined) {
+                 showKey(keyFromUrl, data.expires_at, data.remaining_seconds, false); // isOld = false
+             } else {
+                 // Key invalid/expired, maybe redirect to get key?
+                 loadGetKey();
+             }
+         })
+         .catch(err => {
+              console.error("Error validating key from URL:", err);
+              loadGetKey(); // Fallback
+         });
+    }
 
-.copy-icon {  
-  width: 22px;  
-  height: 22px;  
-  cursor: pointer;  
-}  
 
-button:not(.menu-toggle) {  
-  background: #fff;  
-  color: #000;  
-  border: none;  
-  padding: 12px 18px;  
-  font-size: 1rem;  
-  border-radius: 10px;  
-  cursor: pointer;  
-  transition: 0.3s ease;  
-  width: 100%;  
-}  
-
-button:hover:not(.menu-toggle) {  
-  background: #111;  
-  color: #fff;  
-}  
-
-.notification {  
-  position: fixed;  
-  top: 20px;  
-  right: 20px;  
-  background: #111;  
-  padding: 10px 16px;  
-  color: #fff;  
-  border-radius: 8px;  
-  font-size: 0.95rem;  
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);  
-  z-index: 999;  
-  animation: fadeInNotif 0.3s forwards;  
-}  
-
-@keyframes fadeInNotif {  
-  from { opacity: 0; }  
-  to { opacity: 1; }  
-}
-
-  </style>  
-</head>  
-<body>  
-  <canvas id="bgCanvas"></canvas>    <div class="menu-toggle" onclick="toggleMenu()">☰</div>    <div class="menu" id="menu">  
-    <button onclick="loadHome()">🏠 Home</button>  
-    <button onclick="loadGetKey()">🔑 Get Key</button>  
-    <button onclick="loadGetScript()">📜 Get Script</button>  
-    <button onclick="loadInfo()">👤 Credits</button>  
-  </div>    <div class="container popup-animation" id="main">  
-    <h1>Clark KeySystem</h1>  
-    <p>Welcome! Thanks for using my script — hope it helps you a lot.<br>  
-    For updates or help, feel free to join my <a href="https://discord.gg/AhzY5DCktP" style="color: #00f;">Discord Server</a>.</p>  
-  </div>    <script>  
-    const menu = document.getElementById('menu');  
-    function toggleMenu() {  
-      menu.classList.toggle('show');  
-    }  
-  
-    function animateContainer() {  
-      const container = document.getElementById("main");  
-      container.classList.remove("popup-animation");  
-      void container.offsetWidth;  
-      container.classList.add("popup-animation");  
-    }  
-  
-    function showNotification(text) {  
-      const notif = document.createElement("div");  
-      notif.className = "notification";  
-      notif.textContent = text;  
-      document.body.appendChild(notif);  
-      setTimeout(() => notif.remove(), 3000);  
-    }  
-  
-    function loadHome() {  
-      document.getElementById("main").innerHTML = `  
-        <h1>Clark KeySystem</h1>  
-        <p>Welcome! Thanks for using my script — hope it helps you a lot.<br>  
-        For updates or help, feel free to join my <a href="https://discord.gg/AhzY5DCktP" style="color: #00f;">Discord</a>.</p>  
-      `;  
-      animateContainer();  
-      toggleMenu();  
-    }  
-  
-    function loadGetKey() {  
-      document.getElementById("main").innerHTML = `  
-        <h1>Clark KeySystem</h1>  
-        <p id="status">Click the button below to get your key</p>  
-        <button onclick="checkStatus()">🔑 Get Key</button>  
-      `;  
-      animateContainer();  
-      toggleMenu();  
-    }  
-  
-    function loadGetScript() {  
-      document.getElementById("main").innerHTML = `  
-        <h1>📜 Script</h1>  
-        <p>Click the button below to copy the script</p>  
-        <div class="key-box">  
-          <span class="key-text" id="scriptCode">loadstring(game:HttpGet("https://clark-keysystem.onrender.com/loader"))()</span>  
-        </div>  
-        <button onclick="copyScript()">📋 Copy Script</button>  
-      `;  
-      animateContainer();  
-      toggleMenu();  
-    }  
-  
-    function loadInfo() {  
-      document.getElementById("main").innerHTML = `  
-        <h1>👤 Credits</h1>  
-        <p>Developed by .6uzi (Discord)</p>  
-      `;  
-      animateContainer();  
-      toggleMenu();  
-    }  
-  
-    function checkStatus() {  
-      document.getElementById("status").textContent = "⏳ Checking key status...";  
-      fetch("/check_key_status")  
-        .then(res => res.json())  
-        .then(data => {  
-          if (data.has_key) {  
-            showKey(data.key, data.expires_at, true);  
-          } else {  
-            window.location.href = "https://link-hub.net/1367787/WmEGaMKAKlRJ";  
-          }  
-        })  
-        .catch(() => {  
-          document.getElementById("status").textContent = "❌ Network error.";  
-        });  
-    }  
-  
-    function showKey(rawKey, expiry, isOld) {  
-      let key = rawKey.startsWith("clark-") ? rawKey : `clark-${rawKey}`;  
-      key = key.replace(/^clark-clark-/, "clark-");  
-  
-      // Parse the expiry date correctly  
-      const expiryDate = new Date(expiry);  
-      const formattedExpiry = expiryDate.toLocaleString(); // Format to a readable string  
-  
-      document.getElementById("main").innerHTML = `  
-        <h1>${isOld ? "🔁 Key already created" : "✅ Key Generated!"}</h1>  
-        <div class="key-box">  
-          <span class="key-text">${key}</span>  
-          <img src="https://files.catbox.moe/qnfp07.png" alt="Copy" class="copy-icon" onclick="copyKey('${key}')">  
-        </div>  
-        <p>⏳ Valid until: ${formattedExpiry}</p>  
-      `;  
-      animateContainer();  
-      copyKey(key);  
-    }  
-  
-    function copyKey(key) {  
-      navigator.clipboard.writeText(key)  
-        .then(() => showNotification("✅ Key copied to clipboard!"))  
-        .catch(() => showNotification("❌ Failed to copy key."));  
-    }  
-  
-    function copyScript() {  
-      const script = document.getElementById("scriptCode").textContent;  
-      navigator.clipboard.writeText(script)  
-        .then(() => showNotification("✅ Script copied to clipboard!"))  
-        .catch(() => showNotification("❌ Failed to copy script."));  
-    }  
-  
-    const urlParams = new URLSearchParams(window.location.search);  
-    if (urlParams.has("key")) {  
-      showKey(urlParams.get("key"), new Date(Date.now() + 86400000), false);  
-    }  
-  
-    const canvas = document.getElementById("bgCanvas");  
-    const ctx = canvas.getContext("2d");  
-    canvas.width = window.innerWidth;  
-    canvas.height = window.innerHeight;  
-  
-    const particles = Array.from({ length: 60 }, () => ({  
-      x: Math.random() * canvas.width,  
-      y: Math.random() * canvas.height,  
-      size: Math.random() * 2 + 1,  
-      speedX: (Math.random() - 0.5) * 0.5,  
-      speedY: (Math.random() - 0.5) * 0.5,  
-      color: Math.random() > 0.5 ? '#fff' : '#000'  
-    }));  
-  
-    function animateParticles() {  
-      ctx.clearRect(0, 0, canvas.width, canvas.height);  
-      for (let p of particles) {  
-        ctx.beginPath();  
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);  
-        ctx.fillStyle = p.color;  
-        ctx.fill();  
-        p.x += p.speedX;  
-        p.y += p.speedY;  
-        if (p.x < 0) p.x = canvas.width;  
-        if (p.x > canvas.width) p.x = 0;  
-        if (p.y < 0) p.y = canvas.height;  
-        if (p.y > canvas.height) p.y = 0;  
-      }  
-      requestAnimationFrame(animateParticles);  
-    }  
-    animateParticles();  
-  
-    window.addEventListener("resize", () => {  
-      canvas.width = window.innerWidth;  
-      canvas.height = window.innerHeight;  
-    });  
-  
-    window.addEventListener("pageshow", () => {  
-      const statusEl = document.getElementById("status");  
-      if (statusEl && statusEl.textContent.includes("Checking key status")) {  
-        statusEl.textContent = "Click the button below to get your key";  
-      }  
-    });  
-  </script>  </body>  
+    // --- Background Animation ---
+    const canvas = document.getElementById("bgCanvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const particles = Array.from({ length: 60 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      size: Math.random() * 2 + 1,
+      speedX: (Math.random() - 0.5) * 0.5,
+      speedY: (Math.random() - 0.5) * 0.5,
+      color: Math.random() > 0.5 ? '#fff' : '#000'
+    }));
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let p of particles) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+        p.x += p.speedX;
+        p.y += p.speedY;
+        if (p.x < 0) p.x = canvas.width;
+        if (p.x > canvas.width) p.x = 0;
+        if (p.y < 0) p.y = canvas.height;
+        if (p.y > canvas.height) p.y = 0;
+      }
+      requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+    window.addEventListener("resize", () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+    window.addEventListener("pageshow", () => {
+      const statusEl = document.getElementById("status");
+      if (statusEl && statusEl.textContent.includes("Checking key status")) {
+        statusEl.textContent = "Click the button below to get your key";
+      }
+    });
+  </script>
+</body>
 </html>
