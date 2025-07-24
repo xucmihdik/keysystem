@@ -2,12 +2,12 @@ from flask import Flask, request, jsonify, send_from_directory, redirect, Respon
 from datetime import datetime, timedelta
 import uuid
 import os
-from keys import generate_key, KEYS, USED_IPS  # Importing from keys.py
 
 app = Flask(__name__, static_folder="public", template_folder="public")
 app.secret_key = "your_secret_key"  # Set a secret key for session management
 TOKENS = {}
-SECRET_KEY = "p"
+KEYS = {}
+USED_IPS = {}
 ADMIN_USERNAME = "admin"  # Set your admin username
 ADMIN_PASSWORD = "password"  # Set your admin password
 
@@ -86,7 +86,7 @@ def claim():
 def owner_generate():
     secret = request.args.get("secret")
     device_id = get_device_id()
-    if secret != SECRET_KEY:
+    if secret != "your_secret_key":  # Replace with your actual secret key
         return jsonify({"error": "Unauthorized"}), 403
     if device_id in USED_IPS:
         key = USED_IPS[device_id]
@@ -176,6 +176,13 @@ def manage_key():
 @app.route("/all_keys", methods=["GET"])
 def all_keys():
     return jsonify(KEYS)
+
+def generate_key(ip):
+    key = f"clark-{uuid.uuid4().hex[:12]}"
+    expires_at = datetime.utcnow() + timedelta(hours=24)
+    KEYS[key] = expires_at.isoformat()
+    USED_IPS[ip] = key
+    return key, expires_at.isoformat()
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
