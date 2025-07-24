@@ -73,12 +73,16 @@ def claim():
 
     if device_id in USED_IPS:
         key = USED_IPS[device_id]
-        expiry_str = KEYS.get(key, "1970-01-01T00:00:00")
-        expiry = datetime.fromisoformat(expiry_str)
-        if expiry <= datetime.utcnow():
-            del KEYS[key]
-            del USED_IPS[device_id]
+        expiry_str = KEYS.get(key)
+        if not expiry_str:
+            # If something went wrong and expiry is missing, regenerate key
             key, expiry_str = generate_key(device_id)
+        else:
+            expiry = datetime.fromisoformat(expiry_str)
+            if expiry <= datetime.utcnow():
+                del KEYS[key]
+                del USED_IPS[device_id]
+                key, expiry_str = generate_key(device_id)
     else:
         key, expiry_str = generate_key(device_id)
 
