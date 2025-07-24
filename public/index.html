@@ -222,7 +222,7 @@
       document.getElementById("main").innerHTML = `
         <h1>Clark KeySystem</h1>
         <p>Welcome! Thanks for using my script — hope it helps you a lot.<br>
-        For updates or help, feel free to join my <a href="https://discord.gg/AhzY5DCktP" style="color: #00f;">Discord</a>.</p>
+        For updates or help, feel free to join my <a href="https://discord.gg/AhzY5DCktP" style="color: #00f;">Discord Server</a>.</p>
       `;
       animateContainer();
       toggleMenu();
@@ -277,23 +277,26 @@
     }
 
     function showKey(rawKey, expiry, isOld) {
-  let key = rawKey.startsWith("clark-") ? rawKey : `clark-${rawKey}`;
-  key = key.replace(/^clark-clark-/, "clark-");
+      let key = rawKey.startsWith("clark-") ? rawKey : `clark-${rawKey}`;
+      key = key.replace(/^clark-clark-/, "clark-");
 
-  const expiryDate = new Date(expiry);
+      // Parse the expiry date correctly
+      const expiryDate = new Date(expiry);
+      const formattedExpiry = expiryDate.toLocaleString(); // Format to a readable string
 
-  document.getElementById("main").innerHTML = `
-    <h1>${isOld ? "🔁 Key already created" : "✅ Key Generated!"}</h1>
-    <div class="key-box">
-      <span class="key-text">${key}</span>
-      <img src="https://files.catbox.moe/qnfp07.png" alt="Copy" class="copy-icon" onclick="copyKey('${key}')">
-    </div>
-    <p>⏳ Key expires in: <span id="countdown">Loading...</span></p>
-  `;
-  animateContainer();
-  copyKey(key);
-  startCountdown(expiryDate);
-}
+      document.getElementById("main").innerHTML = `
+        <h1>${isOld ? "🔁 Key already created" : "✅ Key Generated!"}</h1>
+        <div class="key-box">
+          <span class="key-text">${key}</span>
+          <img src="https://files.catbox.moe/qnfp07.png" alt="Copy" class="copy-icon" onclick="copyKey('${key}')">
+        </div>
+        <p>⏳ Valid until: ${formattedExpiry}</p>
+        <p>⏳ Key expires in: <span id="countdown">Loading...</span></p>
+      `;
+      animateContainer();
+      copyKey(key);
+      startCountdown(expiryDate);
+    }
 
     function copyKey(key) {
       navigator.clipboard.writeText(key)
@@ -309,9 +312,9 @@
     }
 
     const urlParams = new URLSearchParams(window.location.search);
-if (urlParams.has("key") && urlParams.has("expires_at")) {
-  showKey(urlParams.get("key"), urlParams.get("expires_at"), false);
-}
+    if (urlParams.has("key")) {
+      showKey(urlParams.get("key"), urlParams.get("expires_at"), false);
+    }
 
     const canvas = document.getElementById("bgCanvas");
     const ctx = canvas.getContext("2d");
@@ -358,29 +361,29 @@ if (urlParams.has("key") && urlParams.has("expires_at")) {
     });
 
     function startCountdown(expiryDate) {
-  const countdownEl = document.getElementById("countdown");
+      const countdownEl = document.getElementById("countdown");
 
-  function updateCountdown() {
-    const now = new Date();
-    const diff = expiryDate - now;
+      function updateCountdown() {
+        const now = new Date();
+        const diff = expiryDate - now;
 
-    if (diff <= 0) {
-      countdownEl.textContent = "Expired";
-      return;
-    }
+        if (diff <= 0) {
+          countdownEl.textContent = "Expired";
+          return;
+        }
 
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff / (1000 * 60)) % 60);
-    const seconds = Math.floor((diff / 1000) % 60);
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff / (1000 * 60)) % 60);
+        const seconds = Math.floor((diff / 1000) % 60);
 
-    countdownEl.textContent =
-      String(hours).padStart(2, "0") + ":" +
-      String(minutes).padStart(2, "0") + ":" +
-      String(seconds).padStart(2, "0");
-  }
+        countdownEl.textContent =
+          String(hours).padStart(2, "0") + ":" +
+          String(minutes).padStart(2, "0") + ":" +
+          String(seconds).padStart(2, "0");
+      }
 
-  updateCountdown(); // Show immediately
-  setInterval(updateCountdown, 1000); // Update every second
+      updateCountdown(); // Show immediately
+      setInterval(updateCountdown, 1000); // Update every second
     }
   </script>
 </body>
