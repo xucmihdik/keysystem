@@ -110,7 +110,8 @@
     <div id="keysContainer">
       {% for key, expiry in keys.items() %}
         <div class="key-box" id="key-{{ key }}">
-          <span class="key-text">{{ key }} (Valid until: {{ format_expiry(expiry) }})</span>
+          <span class="key-text">{{ key }}</span>
+          <span class="key-text" id="countdown-{{ key }}">Valid until: {{ format_expiry(expiry) }}</span>
           <div class="button-group">
             <button onclick="copyKey('{{ key }}')">Copy</button>
             <button onclick="deleteKey('{{ key }}')">Delete</button>
@@ -155,7 +156,8 @@
       keyBox.className = 'key-box';
       keyBox.id = `key-${key}`;
       keyBox.innerHTML = `
-        <span class="key-text">${key} (Valid until: ${formatExpiry(expiry)})</span>
+        <span class="key-text">${key}</span>
+        <span class="key-text" id="countdown-${key}">Valid until: ${formatExpiry(expiry)}</span>
         <div class="button-group">
           <button onclick="copyKey('${key}')">Copy</button>
           <button onclick="deleteKey('${key}')">Delete</button>
@@ -167,6 +169,7 @@
         <button onclick="toggleManage('${key}')">Manage</button>
       `;
       keysContainer.appendChild(keyBox);
+      startCountdown(key, expiry); // Start countdown for the new key
     }
 
     function toggleManage(key) {
@@ -225,8 +228,8 @@
             const newExpiry = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
             const keyBox = document.getElementById(`key-${key}`);
             if (keyBox) {
-              const expiryText = keyBox.querySelector('.key-text');
-              expiryText.textContent = `${key} (Valid until: ${formatExpiry(newExpiry.toISOString())})`;
+              const expiryText = keyBox.querySelector('.key-text:nth-child(2)');
+              expiryText.textContent = `Valid until: ${formatExpiry(newExpiry.toISOString())}`;
             }
           } else {
             showNotification("Error updating key.");
@@ -244,6 +247,30 @@
     function formatExpiry(expiry) {
       const date = new Date(expiry);
       return date.toLocaleString(); // Format to a readable string
+    }
+
+    function startCountdown(key, expiry) {
+      const countdownEl = document.getElementById(`countdown-${key}`);
+      const expiryDate = new Date(expiry);
+
+      function updateCountdown() {
+        const now = new Date();
+        const diff = expiryDate - now;
+
+        if (diff <= 0) {
+          countdownEl.textContent = "Expired";
+          return;
+        }
+
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff / (1000 * 60)) % 60);
+        const seconds = Math.floor((diff / 1000) % 60);
+
+        countdownEl.textContent = `Valid until: ${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+      }
+
+      updateCountdown(); // Show immediately
+      setInterval(updateCountdown, 1000); // Update every second
     }
   </script>
 </body>
