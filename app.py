@@ -1,27 +1,26 @@
 from flask import Flask, request, jsonify, send_from_directory, redirect, Response, render_template, session
 from datetime import datetime, timedelta
-import secrets
 import uuid
 import os
 
 app = Flask(__name__, static_folder="public", template_folder="public")
-app.secret_key = secrets.token_hex(32)  # Secure random secret key
-TOKENS = {}  # Added missing TOKENS dictionary
+app.secret_key = "your_secret_key"  # Set a secret key for session management
+TOKENS = {}
 KEYS = {}
 USED_IPS = {}
-ADMIN_USERNAME = "admin"  # Change this to your actual admin username
-ADMIN_PASSWORD = "password"  # Change this to your actual admin password
+ADMIN_USERNAME = "admin"  # Set your admin username
+ADMIN_PASSWORD = "password"  # Set your admin password
 
-# Helper functions
+# Helper
 def get_device_id():
     ip = request.remote_addr
-    user_agent = request.headers.get("User-Agent", "")  # Fixed typo in header name
+    user_agent = request.headers.get("User -Agent", "")
     return ip + user_agent
 
 def format_expiry(expiry):
     """Convert expiry string to a more readable format."""
     date = datetime.fromisoformat(expiry)
-    return date.strftime("%B %d, %Y %I:%M %p")
+    return date.strftime("%B %d, %Y %I:%M %p")  # Example: July 22, 2025 08:36 AM
 
 def clean_expired_keys():
     """Remove expired keys from the KEYS and USED_IPS dictionaries."""
@@ -35,18 +34,6 @@ def clean_expired_keys():
                 del USED_IPS[ip]
                 break
 
-# Security headers middleware
-@app.after_request
-def add_security_headers(response):
-    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
-    response.headers['Pragma'] = 'no-cache'
-    response.headers['Expires'] = '-1'
-    if request.path.startswith('/panel'):
-        response.headers['X-Frame-Options'] = 'DENY'
-        response.headers['X-Content-Type-Options'] = 'nosniff'
-    return response
-
-# Routes
 @app.route("/")
 def home():
     return send_from_directory("public", "index.html")
@@ -54,16 +41,17 @@ def home():
 @app.route("/check_key_status")
 def check_key_status():
     device_id = get_device_id()
-    clean_expired_keys()
+    clean_expired_keys()  # Clean expired keys before checking
     key = USED_IPS.get(device_id)
-    if key and key in KEYS:
-        expiry_str = KEYS[key]
-        expiry = datetime.fromisoformat(expiry_str)
-        if expiry > datetime.utcnow():
-            return jsonify({"has_key": True, "key": key, "expires_at": expiry_str})
-        else:
-            del KEYS[key]
-            del USED_IPS[device_id]
+    if key:
+        expiry_str = KEYS.get(key)
+        if expiry_str:
+            expiry = datetime.fromisoformat(expiry_str)
+            if expiry > datetime.utcnow():
+                return jsonify({"has_key": True, "key": key, "expires_at": expiry_str})
+            else:
+                del KEYS[key]
+                del USED_IPS[device_id]
     return jsonify({"has_key": False})
 
 @app.route("/get_token")
@@ -140,31 +128,27 @@ def static_file(path):
 @app.route("/panel", methods=["GET", "POST"])
 def panel():
     if request.method == "POST":
-        username = request.form.get("username", "").strip()
-        password = request.form.get("password", "").strip()
+        username = request.form.get("username")
+        password = request.form.get("password")
         if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
-            session['logged_in'] = True
-            session['last_activity'] = datetime.utcnow().isoformat()
-            return redirect("/panel/dashboard")
-        return render_template("panel.html", error="Invalid credentials")
-    return render_template("panel.html")
+            session['logged_in'] = True  # Set session variable for logged in user
+            return redirect("/panel/dashboard")  # Redirect to the dashboard on successful login
+        else:
+            return render_template("panel.html", error="Invalid credentials")  # Render panel with error
 
+    return render_template("panel.html")  # Render login panel
+
+# Dashboard Route
 @app.route("/panel/dashboard")
 def dashboard():
-    if not session.get('logged_in'):
-        return redirect("/panel?error=unauthorized"), 303
-    # Check session expiration (15 minutes inactivity)
-    last_activity = session.get('last_activity')
-    if last_activity and (datetime.utcnow() - datetime.fromisoformat(last_activity)) > timedelta(minutes=15):
-        session.clear()
-        return redirect("/panel?error=session_expired"), 303
-    session['last_activity'] = datetime.utcnow().isoformat()
-    clean_expired_keys()
-    return render_template("dashboard.html", keys=KEYS, format_expiry=format_expiry)
+    if not session.get('logged_in'):  # Check if user is logged in
+        return redirect("/panel")  # Redirect to login if not logged in
+    clean_expired_keys()  # Clean expired keys before rendering dashboard
+    return render_template("dashboard.html", keys=KEYS, format_expiry=format_expiry)  # Render dashboard with keys
 
 @app.route("/logout")
 def logout():
-    session.clear()
+    session.pop('logged_in', None)  # Remove the logged in session
     return redirect("/panel")
 
 @app.route("/create_key", methods=["POST"])
