@@ -13,13 +13,14 @@
     html, body {
       height: 100%;
       width: 100%;
-      overflow: hidden;
+      /* overflow: hidden; */ /* Removed to allow normal scrolling if needed */
       font-family: 'Segoe UI', sans-serif;
       background: #000;
       display: flex;
       justify-content: center;
       align-items: center;
       position: relative;
+      color: #fff; /* Set default text color */
     }
     .container {
       z-index: 2;
@@ -28,52 +29,104 @@
       padding: 24px 20px;
       width: 90%;
       max-width: 400px;
-      text-align: center;
+      /* text-align: center; */ /* Removed for better control */
       border: 2px solid #fff;
       box-shadow: 0 0 30px rgba(255, 255, 255, 0.6);
     }
     h1 {
       font-size: 1.7rem;
-      margin-bottom: 12px;
+      margin-bottom: 20px; /* Increased margin */
       color: #fff;
+      text-align: center; /* Center the heading */
+    }
+    label {
+       display: block;
+       margin-bottom: 5px;
+       font-weight: bold;
+       text-align: left; /* Align labels to the left */
     }
     input {
       width: 100%;
-      padding: 10px;
-      margin: 10px 0;
-      border: none;
+      padding: 12px; /* Increased padding */
+      margin-bottom: 15px; /* Increased margin */
+      border: 1px solid #ccc; /* Added border */
       border-radius: 5px;
+      background-color: #333; /* Darker background for input */
+      color: #fff; /* White text */
+    }
+    input:focus {
+        outline: none;
+        border-color: #007bff; /* Blue border on focus */
     }
     button {
       background: #fff;
       color: #000;
       border: none;
-      padding: 10px;
+      padding: 12px; /* Increased padding */
       border-radius: 5px;
       cursor: pointer;
       transition: 0.3s ease;
       width: 100%;
-      margin: 5px 0;
+      margin-top: 10px; /* Margin above the button */
+      font-size: 1rem; /* Consistent font size */
     }
     button:hover {
       background: #111;
       color: #fff;
     }
     .error {
-      color: red;
-      display: {% if error %} block {% else %} none {% endif %}; /* Show if there's an error */
+      color: #ff4d4d; /* Red color for errors */
+      background-color: rgba(255, 0, 0, 0.1); /* Light red background */
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 15px; /* Space below error message */
+      text-align: center;
+      display: block; /* Ensure it's displayed as a block element */
+    }
+    .error.hidden {
+        display: none; /* Hidden class to hide error when not needed */
     }
   </style>
 </head>
 <body>
   <div class="container" id="loginContainer">
     <h1>Admin Login</h1>
+    <!-- Display error message if it exists -->
+    <!-- The error message is passed from the Flask route -->
+    {% if error %}
+      <div id="loginError" class="error">{{ error }}</div>
+    {% else %}
+      <div id="loginError" class="error hidden"></div>
+    {% endif %}
+
     <form id="loginForm" method="POST" action="/panel">
-      <input type="text" name="username" placeholder="Username" required />
-      <input type="password" name="password" placeholder="Password" required />
+      <label for="username">Username:</label>
+      <input type="text" id="username" name="username" placeholder="Enter username" required />
+
+      <label for="password">Password:</label>
+      <input type="password" id="password" name="password" placeholder="Enter password" required />
+
       <button type="submit">Login</button>
     </form>
-    <div id="loginError" class="error">{{ error }}</div> <!-- Display error message if exists -->
   </div>
+
+  <script>
+    // Optional: Basic client-side validation or enhancements can be added here
+    // For now, the form submits to the Flask backend which handles authentication.
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value.trim();
+        const errorDiv = document.getElementById('loginError');
+
+        if (!username || !password) {
+            e.preventDefault(); // Prevent form submission
+            errorDiv.textContent = 'Please fill in both fields.';
+            errorDiv.classList.remove('hidden');
+            return false;
+        }
+        // If fields are filled, let the form submit normally to Flask
+        // Flask will handle incorrect credentials
+    });
+  </script>
 </body>
 </html>
