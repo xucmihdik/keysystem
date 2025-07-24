@@ -13,13 +13,13 @@
     html, body {
       height: 100%;
       width: 100%;
-      overflow: auto; /* Changed from hidden to allow scrolling */
+      overflow: auto;
       font-family: 'Segoe UI', sans-serif;
       background: #000;
       display: flex;
       justify-content: center;
-      align-items: flex-start; /* Changed from center to align top */
-      padding: 20px 0; /* Added padding */
+      align-items: flex-start;
+      padding: 20px 0;
       position: relative;
     }
     .container {
@@ -32,7 +32,7 @@
       text-align: center;
       border: 2px solid #fff;
       box-shadow: 0 0 30px rgba(255, 255, 255, 0.6);
-      margin: 20px 0; /* Added margin */
+      margin: 20px 0;
     }
     h1 {
       font-size: 1.7rem;
@@ -49,7 +49,7 @@
       flex-direction: column;
       align-items: flex-start;
       gap: 10px;
-      word-break: break-all; /* Changed from break-word for better handling */
+      word-break: break-all;
     }
     .key-text {
       font-weight: bold;
@@ -202,7 +202,7 @@
         </div>
         <button onclick="toggleManage('${key}')">Manage</button>
       `;
-      keysContainer.prepend(keyBox); // Add new keys at the top
+      keysContainer.prepend(keyBox);
       startCountdown(key, expiry);
     }
 
@@ -300,15 +300,16 @@
       const countdownEl = document.getElementById(`countdown-${key}`);
       const expiryDate = new Date(expiry);
       
-      // Initial update
+      // Immediate first update
       updateCountdown();
       
       // Store the interval
       countdownIntervals[key] = setInterval(updateCountdown, 1000);
-      
+
       function updateCountdown() {
         const now = new Date();
-        const diff = expiryDate - now;
+        // Use getTime() for timezone-independent calculation
+        const diff = expiryDate.getTime() - now.getTime();
         
         if (diff <= 0) {
           countdownEl.textContent = "EXPIRED";
@@ -316,20 +317,17 @@
           return;
         }
         
-        // Calculate time components
-        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-        const minutes = Math.floor((diff / (1000 * 60)) % 60);
-        const seconds = Math.floor((diff / 1000) % 60);
+        // Calculate total hours, minutes, seconds
+        const totalSeconds = Math.floor(diff / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
         
-        // Format based on remaining time
-        if (days > 0) {
-          countdownEl.textContent = `Expires in: ${days}d ${hours}h ${minutes}m`;
-        } else if (hours > 0) {
-          countdownEl.textContent = `Expires in: ${hours}h ${minutes}m ${seconds}s`;
-        } else {
-          countdownEl.textContent = `Expires in: ${minutes}m ${seconds}s`;
-        }
+        // Display in 24-hour format (HH:MM:SS)
+        countdownEl.textContent = 
+          `Expires in: ${String(hours).padStart(2, "0")}:` +
+          `${String(minutes).padStart(2, "0")}:` +
+          `${String(seconds).padStart(2, "0")}`;
       }
     }
 
