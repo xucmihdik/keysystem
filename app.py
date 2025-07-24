@@ -70,17 +70,20 @@ def claim():
     device_id = get_device_id()
     if not token or token not in TOKENS or TOKENS[token] != device_id:
         return "", 403
+
     if device_id in USED_IPS:
         key = USED_IPS[device_id]
-        expiry = datetime.fromisoformat(KEYS.get(key, "1970-01-01T00:00:00"))
+        expiry_str = KEYS.get(key, "1970-01-01T00:00:00")
+        expiry = datetime.fromisoformat(expiry_str)
         if expiry <= datetime.utcnow():
             del KEYS[key]
             del USED_IPS[device_id]
-            key, _ = generate_key(device_id)
+            key, expiry_str = generate_key(device_id)
     else:
-        key, _ = generate_key(device_id)
+        key, expiry_str = generate_key(device_id)
+
     del TOKENS[token]
-    return redirect(f"/?key={key}")
+    return redirect(f"/?key={key}&expires_at={expiry_str}")
 
 @app.route("/owner_generate")
 def owner_generate():
