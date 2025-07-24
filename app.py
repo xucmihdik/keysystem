@@ -6,14 +6,14 @@ import uuid
 import os
 
 app = Flask(__name__, static_folder="public", template_folder="public")
-# CRITICAL: Change this secret key to a long, random, secret string in production!
-app.secret_key = "your_secret_key_change_this_for_production" 
+# IMPORTANT: Change this secret key to a long, random, secret string in production!
+app.secret_key = "your_secret_key_change_this_for_production"
 
 # In-memory storage (Consider using a database for persistence in production)
 TOKENS = {} # { token: device_id } - Used for Linkvertise flow initiation check
-# KEYS now stores creation timestamp instead of absolute expiry
-# Format: { "clark-xxxx": { "created_at": "ISO_TIMESTAMP_STRING" } }
-KEYS = {} # { key: { "created_at": ... } }
+# KEYS now stores the absolute expiry timestamp
+# Format: { "clark-xxxx": { "expires_at": "ISO_TIMESTAMP_STRING" } }
+KEYS = {} # { key: { "expires_at": ... } }
 USED_IPS = {} # { device_id_hash: key } - Used to enforce single key per user for claim/owner_generate
 
 ADMIN_USERNAME = "admin"  # Set your admin username
@@ -32,59 +32,53 @@ def get_key_expiry_info(key_data):
     """
     Calculates if a key is valid, its expiry time, and remaining seconds.
     Args:
-        key_data (dict): The dictionary containing the key's 'created_at' timestamp.
+        key_data (dict): The dictionary containing the key's 'expires_at' timestamp.
     Returns:
         tuple: (is_valid (bool), expires_at_iso (str or None), remaining_seconds (int))
     """
-    created_at_str = key_data.get("created_at")
-    if not created_at_str:
-        # Invalid key data structure
-        return False, None, 0 
+    expires_at_str = key_data.get("expires_at")
+    if not expires_at_str:
+        return False, None, 0 # Invalid key data
 
     try:
-        created_at = datetime.fromisoformat(created_at_str)
-        expires_at = created_at + timedelta(hours=24)
+        expires_at = datetime.fromisoformat(expires_at_str)
         now = datetime.utcnow()
         is_valid = now < expires_at
         remaining_seconds = int((expires_at - now).total_seconds()) if is_valid else 0
         return is_valid, expires_at.isoformat(), remaining_seconds
     except ValueError:
-        # Error parsing the date string (e.g., invalid format)
-        return False, None, 0
+        return False, None, 0 # Error parsing date
 
 def clean_expired_keys():
     """Remove expired keys from the KEYS and USED_IPS dictionaries."""
-    current_time = datetime.utcnow()
     expired_keys = []
     for key, key_data in KEYS.items():
-        # Use the helper to check validity
         is_valid, _, _ = get_key_expiry_info(key_data)
         if not is_valid:
             expired_keys.append(key)
 
     for key in expired_keys:
-        # Safely remove from KEYS
-        if key in KEYS:
-             del KEYS[key]
-        # Safely remove association from USED_IPS
-        for device_id, k in list(USED_IPS.items()): # Iterate over a copy
+        if key in KEYS: # Safety check
+            del KEYS[key]
+        # Remove from USED_IPS if it exists (for user keys)
+        for device_id, k in list(USED_IPS.items()):
             if k == key:
                 del USED_IPS[device_id]
-                # Break if one-to-one mapping is assumed, otherwise remove 'break'
-                break 
+                break
 
-def generate_key(device_id=None):
+def generate_key(device_id=None, duration_hours=24):
     """
     Generates a new key.
     Args:
         device_id (str, optional): Device ID to associate the key with (for user flows).
                                    If None, the key is not associated with a specific user IP.
+        duration_hours (int): Duration in hours for the key's initial validity (default 24).
     Returns:
         tuple: (key (str), key_data (dict))
     """
     key = f"clark-{uuid.uuid4().hex[:12]}"
-    created_at = datetime.utcnow()
-    key_data = {"created_at": created_at.isoformat()}
+    expires_at = datetime.utcnow() + timedelta(hours=duration_hours)
+    key_data = {"expires_at": expires_at.isoformat()}
     KEYS[key] = key_data
     if device_id:
         # Associate the key with the device ID for user flows (enforces single key)
@@ -102,25 +96,22 @@ def home():
 @app.route("/check_key_status")
 def check_key_status():
     device_id = get_device_id()
-    clean_expired_keys()  # Clean expired keys before checking
+    clean_expired_keys() # Clean expired keys before checking
     key = USED_IPS.get(device_id)
     if key and key in KEYS:
         key_data = KEYS[key]
         is_valid, expires_at_str, remaining_seconds = get_key_expiry_info(key_data)
         if is_valid and expires_at_str:
-            # Return key, expiry timestamp, and remaining seconds for the user's single key
              return jsonify({
                 "has_key": True,
                 "key": key,
-                "expires_at": expires_at_str, # Full expiry timestamp
-                "remaining_seconds": remaining_seconds # Seconds left
+                "expires_at": expires_at_str,
+                "remaining_seconds": remaining_seconds
             })
         else:
             # Key expired or invalid, clean up
-            if key in KEYS:
-                 del KEYS[key]
-            if device_id in USED_IPS:
-                 del USED_IPS[device_id]
+            if key in KEYS: del KEYS[key]
+            if device_id in USED_IPS: del USED_IPS[device_id]
 
     return jsonify({"has_key": False})
 
@@ -129,13 +120,11 @@ def get_token():
     referer = request.headers.get("Referer", "")
     # Basic check to ensure request came from Linkvertise
     if "linkvertise.com" not in referer.lower():
-        # Return Forbidden error
-        return "Access Denied: Invalid Referrer", 403 
+        return "Access Denied: Invalid Referrer", 403
     device_id = get_device_id()
     token = uuid.uuid4().hex[:24]
     TOKENS[token] = device_id
-    # Redirect to the claim endpoint with the token
-    return redirect(f"/claim?token={token}") 
+    return redirect(f"/claim?token={token}")
 
 @app.route("/claim")
 def claim():
@@ -143,7 +132,6 @@ def claim():
     device_id = get_device_id()
     # Validate token existence and association with the requesting device
     if not token or token not in TOKENS or TOKENS[token] != device_id:
-        # Return Forbidden error if validation fails
         return "Access Denied: Invalid Token or Device Mismatch", 403
 
     # Check if the user already has a *valid* key
@@ -162,10 +150,9 @@ def claim():
              if device_id in USED_IPS:
                   del USED_IPS[device_id]
 
-    # Generate a new key specifically for this user's device
-    key, key_data = generate_key(device_id)
+    # Generate a new key specifically for this user's device (default 24h)
+    key, key_data = generate_key(device_id, duration_hours=24)
     del TOKENS[token] # Clean up the one-time-use token
-    # Redirect user to the homepage, passing the newly generated key
     return redirect(f"/?key={key}")
 
 @app.route("/owner_generate")
@@ -173,7 +160,7 @@ def owner_generate():
     secret = request.args.get("secret")
     device_id = get_device_id()
     # Validate the secret key provided in the request
-    if secret != "your_secret_key":  # Replace with your actual secret key
+    if secret != "your_secret_key": # Replace with your actual secret key
         return jsonify({"error": "Unauthorized"}), 403
 
     # Check if the user already has a *valid* key
@@ -197,8 +184,8 @@ def owner_generate():
              if device_id in USED_IPS:
                   del USED_IPS[device_id]
 
-    # Generate a new key specifically for this user's device
-    key, key_data = generate_key(device_id)
+    # Generate a new key specifically for this user's device (default 24h)
+    key, key_data = generate_key(device_id, duration_hours=24)
     _, expires_at_str, remaining_seconds = get_key_expiry_info(key_data)
     return jsonify({
         "key": key,
@@ -251,8 +238,8 @@ def panel():
         if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
             # Login successful: Set session variable
             session['logged_in'] = True
-            # IMPORTANT: Use absolute path for redirect to avoid relative path issues
-            return redirect("/panel/dashboard") 
+            # IMPORTANT: Use absolute path for redirect
+            return redirect("/panel/dashboard")
         else:
             # Login failed: Render login page with error message
             return render_template("panel.html", error="Invalid credentials")
@@ -266,8 +253,8 @@ def dashboard():
     if not session.get('logged_in'):
         # User is not logged in, redirect them to the login page
         # IMPORTANT: Use absolute path for redirect
-        return redirect("/panel") 
-    
+        return redirect("/panel")
+
     # User is logged in, proceed to display the dashboard
     clean_expired_keys() # Clean expired keys before displaying
 
@@ -290,7 +277,7 @@ def dashboard():
         minutes = int((seconds % 3600) // 60)
         secs = int(seconds % 60)
         # Format with leading zeros (e.g., 01:05:09)
-        return f"{hours:02d}:{minutes:02d}:{secs:02d}" 
+        return f"{hours:02d}:{minutes:02d}:{secs:02d}"
 
     # Render the dashboard template, passing the key data and helper functions
     return render_template(
@@ -299,23 +286,19 @@ def dashboard():
         # Lambda to format expiry datetime string into a readable format
         format_expiry=lambda iso_str: datetime.fromisoformat(iso_str).strftime("%B %d, %Y %I:%M %p"),
         # Pass the format_countdown function for use in the template
-        format_countdown=format_countdown 
+        format_countdown=format_countdown
     )
 
 @app.route("/logout")
 def logout():
     # Remove the 'logged_in' session variable to log the user out
-    session.pop('logged_in', None)  
+    session.pop('logged_in', None)
     # Redirect the user back to the login page
     return redirect("/panel")
 
-# --- Admin API Routes (Protected by Dashboard Session Check if Needed) ---
-# Note: These routes are called by the dashboard JS and are protected by the session
-# check in the /panel/dashboard route, as users must be logged in to access the dashboard
-# which contains the JS that calls these routes.
+# --- Admin API Routes ---
 
-# Route to create a new key (from the admin dashboard)
-# MODIFIED: Allow creating a new key without checking for existing user keys.
+# --- MODIFIED: Allow creating a new key without checking for existing user keys ---
 # This removes the restriction for the admin dashboard only.
 # The user-facing claim/owner_generate/check_key_status routes still enforce single key per user/IP.
 @app.route("/create_key", methods=["POST"])
@@ -326,14 +309,8 @@ def create_key():
 
     # Generate new key (without associating it with a specific user IP immediately).
     # We directly handle key generation here, bypassing the user association logic.
-    key = f"clark-{uuid.uuid4().hex[:12]}"
-    created_at = datetime.utcnow()
-    key_data = {"created_at": created_at.isoformat()}
-    KEYS[key] = key_data
-    # Note: We don't add this key to USED_IPS here, because it's an admin-created key,
-    # not tied to a specific user's IP for the single-key restriction logic.
-    # The single-key restriction for users relies on USED_IPS, populated by claim/owner_generate.
-
+    # Default duration is 24 hours for admin-created keys as well.
+    key, key_data = generate_key(device_id=None, duration_hours=24)
     _, expires_at_str, remaining_seconds = get_key_expiry_info(key_data)
     # Return the new key information to the dashboard frontend
     return jsonify({
@@ -342,7 +319,6 @@ def create_key():
         "remaining_seconds": remaining_seconds
     })
 
-# Route to delete a key (from the admin dashboard)
 @app.route("/delete_key", methods=["POST"])
 def delete_key():
     # Get the key to delete from the JSON request body
@@ -351,19 +327,18 @@ def delete_key():
     if key in KEYS:
         # Remove the key from the main KEYS dictionary
         del KEYS[key]
-        # Also remove the association from USED_IPS if it exists 
+        # Also remove the association from USED_IPS if it exists
         # (in case an admin deletes a user's key)
         for device_id, k in list(USED_IPS.items()): # Iterate over a copy
             if k == key:
                 del USED_IPS[device_id]
-                # Break if one-to-one mapping is assumed, otherwise remove 'break'
                 break
         # Return success response
         return jsonify({"success": True})
     # Return error response if key not found
     return jsonify({"error": "Key not found"}), 404
 
-# Route to manage (currently renews) a key (from the admin dashboard)
+# --- UPDATED: manage_key now correctly sets expires_at based on days ---
 @app.route("/manage_key", methods=["POST"])
 def manage_key():
     # Get data from the JSON request body
@@ -380,11 +355,9 @@ def manage_key():
 
     # Check if the key exists
     if key in KEYS:
-        # Create a NEW key entry with the CURRENT time as the new creation time
-        # and the specified duration. This effectively resets/renews the key's 24h timer.
-        new_created_at = datetime.utcnow()
-        KEYS[key] = {"created_at": new_created_at.isoformat()} # Update the creation timestamp
-        # Get the new expiry info based on the reset time
+        # Set the new expiry time based on the provided number of days from NOW
+        new_expires_at = datetime.utcnow() + timedelta(days=days)
+        KEYS[key] = {"expires_at": new_expires_at.isoformat()}
         _, new_expires_at_str, new_remaining_seconds = get_key_expiry_info(KEYS[key])
         # Return success response with new expiry details
         return jsonify({
@@ -395,7 +368,6 @@ def manage_key():
     # Return error response if key not found
     return jsonify({"error": "Key not found"}), 404
 
-# Route to get all keys (potentially used by other admin features)
 @app.route("/all_keys", methods=["GET"])
 def all_keys():
     # Return keys with validity info (used for potential API access or full refresh)
