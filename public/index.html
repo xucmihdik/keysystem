@@ -310,9 +310,9 @@
     }
 
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has("key")) {
-      showKey(urlParams.get("key"), new Date(Date.now() + 86400000), false);
-    }
+if (urlParams.has("key") && urlParams.has("expires_at")) {
+  showKey(urlParams.get("key"), urlParams.get("expires_at"), false);
+}
 
     const canvas = document.getElementById("bgCanvas");
     const ctx = canvas.getContext("2d");
