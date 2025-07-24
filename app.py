@@ -29,6 +29,10 @@ def clean_expired_keys():
                 del USED_IPS[ip]
                 break
 
+def format_expiry(expiry):
+    """Format the expiry date to a readable string."""
+    return datetime.fromisoformat(expiry).strftime("%Y-%m-%d %H:%M:%S")
+
 @app.route("/")
 def home():
     return send_from_directory("public", "index.html")
@@ -139,7 +143,7 @@ def dashboard():
     if not session.get('logged_in'):  # Check if user is logged in
         return redirect("/panel")  # Redirect to login if not logged in
     clean_expired_keys()  # Clean expired keys before rendering dashboard
-    return render_template("dashboard.html", keys=KEYS)  # Render dashboard with keys
+    return render_template("dashboard.html", keys=KEYS, format_expiry=format_expiry)  # Render dashboard with keys
 
 @app.route("/logout")
 def logout():
