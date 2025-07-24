@@ -280,9 +280,8 @@
       let key = rawKey.startsWith("clark-") ? rawKey : `clark-${rawKey}`;
       key = key.replace(/^clark-clark-/, "clark-");
 
-      // Parse the expiry date correctly
-      const expiryDate = new Date(expiry);
-      const formattedExpiry = expiryDate.toLocaleString(); // Format to a readable string
+      // Set the countdown to 24 hours
+      const expiryDate = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now
 
       document.getElementById("main").innerHTML = `
         <h1>${isOld ? "🔁 Key already created" : "✅ Key Generated!"}</h1>
@@ -290,7 +289,6 @@
           <span class="key-text">${key}</span>
           <img src="https://files.catbox.moe/qnfp07.png" alt="Copy" class="copy-icon" onclick="copyKey('${key}')">
         </div>
-        <p>⏳ Valid until: ${formattedExpiry}</p>
         <p>⏳ Key expires in: <span id="countdown">Loading...</span></p>
       `;
       animateContainer();
