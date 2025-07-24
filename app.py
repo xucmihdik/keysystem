@@ -9,11 +9,11 @@ app = Flask(__name__, static_folder="public", template_folder="public")
 app.secret_key = "your_secret_key"  # Set a strong secret key for session management
 
 # In-memory storage
-TOKENS = {} # { token: device_id }
+TOKENS = {} # { token: device_id } - Used for Linkvertise flow initiation check
 # KEYS now stores creation timestamp instead of absolute expiry
 # Format: { "clark-xxxx": { "created_at": "ISO_TIMESTAMP_STRING" } }
 KEYS = {} # { key: { "created_at": ... } }
-USED_IPS = {} # { device_id_hash: key }
+USED_IPS = {} # { device_id_hash: key } - Used to enforce single key per user for claim/owner_generate
 
 ADMIN_USERNAME = "admin"  # Set your admin username
 ADMIN_PASSWORD = "password"  # Set your admin password
@@ -60,19 +60,30 @@ def clean_expired_keys():
 
     for key in expired_keys:
         del KEYS[key]
-        # Remove from USED_IPS if it exists
+        # Remove from USED_IPS if it exists (for user keys)
         for device_id, k in list(USED_IPS.items()):
             if k == key:
                 del USED_IPS[device_id]
                 break
 
-def generate_key(device_id):
-    """Generates a new key associated with a device ID."""
+def generate_key(device_id=None):
+    """
+    Generates a new key.
+    Args:
+        device_id (str, optional): Device ID to associate the key with (for user flows).
+                                   If None, the key is not associated with a specific user IP.
+    Returns:
+        tuple: (key (str), key_data (dict))
+    """
     key = f"clark-{uuid.uuid4().hex[:12]}"
     created_at = datetime.utcnow()
     key_data = {"created_at": created_at.isoformat()}
     KEYS[key] = key_data
-    USED_IPS[device_id] = key
+    if device_id:
+        # Associate the key with the device ID for user flows (enforces single key)
+        USED_IPS[device_id] = key
+    # Note: Keys created without device_id (e.g., from dashboard) are not added to USED_IPS
+    # and are not subject to the single-key-per-user restriction.
     return key, key_data
 
 # --- Routes ---
@@ -90,7 +101,7 @@ def check_key_status():
         key_data = KEYS[key]
         is_valid, expires_at_str, remaining_seconds = get_key_expiry_info(key_data)
         if is_valid and expires_at_str:
-            # Return key, expiry timestamp, and remaining seconds
+            # Return key, expiry timestamp, and remaining seconds for the user's single key
              return jsonify({
                 "has_key": True,
                 "key": key,
@@ -122,7 +133,7 @@ def claim():
     if not token or token not in TOKENS or TOKENS[token] != device_id:
         return "", 403
 
-    # Check if existing key is still valid
+    # Check if existing key is still valid FOR THIS USER
     existing_key = USED_IPS.get(device_id)
     if existing_key and existing_key in KEYS:
          key_data = KEYS[existing_key]
@@ -137,10 +148,10 @@ def claim():
              if device_id in USED_IPS:
                   del USED_IPS[device_id]
 
-    # Generate new key
+    # Generate new key ASSOCIATED WITH THIS USER'S DEVICE ID
     key, key_data = generate_key(device_id)
     del TOKENS[token]
-    # expires_at_str is calculated on the frontend now, but we pass the key
+    # Redirect with the new key
     return redirect(f"/?key={key}")
 
 @app.route("/owner_generate")
@@ -150,7 +161,7 @@ def owner_generate():
     if secret != "your_secret_key":  # Replace with your actual secret key
         return jsonify({"error": "Unauthorized"}), 403
 
-    # Check if existing key is still valid
+    # Check if existing key is still valid FOR THIS USER
     existing_key = USED_IPS.get(device_id)
     if existing_key and existing_key in KEYS:
          key_data = KEYS[existing_key]
@@ -170,7 +181,7 @@ def owner_generate():
              if device_id in USED_IPS:
                   del USED_IPS[device_id]
 
-    # Generate new key
+    # Generate new key ASSOCIATED WITH THIS USER'S DEVICE ID
     key, key_data = generate_key(device_id)
     _, expires_at_str, remaining_seconds = get_key_expiry_info(key_data)
     return jsonify({
@@ -258,25 +269,24 @@ def logout():
     session.pop('logged_in', None)  # Remove the logged in session
     return redirect("/panel")
 
+# --- MODIFIED: Allow creating a new key without checking for existing user keys ---
+# This removes the restriction for the admin dashboard only.
+# The user-facing claim/owner_generate/check_key_status routes still enforce single key per user/IP.
 @app.route("/create_key", methods=["POST"])
 def create_key():
-    device_id = get_device_id()
-    # Check if existing key is still valid
-    existing_key = USED_IPS.get(device_id)
-    if existing_key and existing_key in KEYS:
-         key_data = KEYS[existing_key]
-         is_valid, _, _ = get_key_expiry_info(key_data)
-         if is_valid:
-             # Key still valid, cannot create new one
-             return jsonify({"error": "Key already exists and is valid"}), 400
-         else:
-             # Key expired, clean up
-             del KEYS[existing_key]
-             if device_id in USED_IPS:
-                  del USED_IPS[device_id]
+    # DO NOT check for existing valid key for the user's IP/device
+    # Simply generate a new key every time this route is called (e.g., from the dashboard)
 
-    # Generate new key
-    key, key_data = generate_key(device_id)
+    # Generate new key (without associating it with a specific user IP immediately)
+    # We can modify generate_key slightly or just handle it here.
+    key = f"clark-{uuid.uuid4().hex[:12]}"
+    created_at = datetime.utcnow()
+    key_data = {"created_at": created_at.isoformat()}
+    KEYS[key] = key_data
+    # Note: We don't add this key to USED_IPS here, because it's an admin-created key,
+    # not tied to a specific user's IP for the single-key restriction logic.
+    # The single-key restriction for users relies on USED_IPS, which is populated by claim/owner_generate.
+
     _, expires_at_str, remaining_seconds = get_key_expiry_info(key_data)
     return jsonify({
         "key": key,
@@ -289,6 +299,7 @@ def delete_key():
     key = request.json.get("key")
     if key in KEYS:
         del KEYS[key]
+        # Also remove from USED_IPS if it exists (in case an admin deletes a user's key)
         for device_id, k in list(USED_IPS.items()): # Iterate over a copy
             if k == key:
                 del USED_IPS[device_id]
