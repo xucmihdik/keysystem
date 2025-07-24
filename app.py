@@ -236,10 +236,21 @@ def dashboard():
              }
         # Optionally handle expired keys differently in the dashboard if needed
 
+    # Define the format_countdown helper function for the template
+    def format_countdown(seconds):
+        """Converts seconds to HH:MM:SS format string for Jinja2."""
+        if seconds <= 0:
+            return "Expired"
+        hours = int(seconds // 3600)
+        minutes = int((seconds % 3600) // 60)
+        secs = int(seconds % 60)
+        return f"{hours:02d}:{minutes:02d}:{secs:02d}"
+
     return render_template(
         "dashboard.html",
         keys=keys_with_info, # Pass the enriched data
-        format_expiry=lambda iso_str: datetime.fromisoformat(iso_str).strftime("%B %d, %Y %I:%M %p")
+        format_expiry=lambda iso_str: datetime.fromisoformat(iso_str).strftime("%B %d, %Y %I:%M %p"),
+        format_countdown=format_countdown # Pass the new helper function
     )
 
 @app.route("/logout")
