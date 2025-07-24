@@ -282,7 +282,7 @@
 
       // Parse the expiry date correctly
       const expiryDate = new Date(expiry);
-      const formattedExpiry = expiryDate.toUTCString(); // Format to UTC string
+      const formattedExpiry = expiryDate.toLocaleString(); // Format to a readable string
 
       document.getElementById("main").innerHTML = `
         <h1>${isOld ? "🔁 Key already created" : "✅ Key Generated!"}</h1>
