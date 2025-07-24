@@ -17,11 +17,6 @@ def get_device_id():
     user_agent = request.headers.get("User -Agent", "")
     return ip + user_agent
 
-def format_expiry(expiry):
-    """Convert expiry string to a more readable format."""
-    date = datetime.fromisoformat(expiry)
-    return date.strftime("%B %d, %Y %I:%M %p")  # Example: July 22, 2025 08:36 AM
-
 def clean_expired_keys():
     """Remove expired keys from the KEYS and USED_IPS dictionaries."""
     current_time = datetime.utcnow()
@@ -144,7 +139,7 @@ def dashboard():
     if not session.get('logged_in'):  # Check if user is logged in
         return redirect("/panel")  # Redirect to login if not logged in
     clean_expired_keys()  # Clean expired keys before rendering dashboard
-    return render_template("dashboard.html", keys=KEYS, format_expiry=format_expiry)  # Render dashboard with keys
+    return render_template("dashboard.html", keys=KEYS)  # Render dashboard with keys
 
 @app.route("/logout")
 def logout():
@@ -186,8 +181,7 @@ def all_keys():
 
 def generate_key(ip):
     key = f"clark-{uuid.uuid4().hex[:12]}"
-    now = datetime.now()  # ← use local time instead of utcnow
-    expires_at = now + timedelta(hours=24)
+    expires_at = datetime.utcnow() + timedelta(hours=24)  # Key valid for 24 hours
     KEYS[key] = expires_at.isoformat()
     USED_IPS[ip] = key
     return key, expires_at.isoformat()
