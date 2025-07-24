@@ -268,12 +268,23 @@
           if (data.has_key) {
             showKey(data.key, data.expires_at, true);
           } else {
-            document.getElementById("status").textContent = "❌ No key found. You can create a new one.";
-            document.getElementById("main").innerHTML += `<button onclick="loadGetKey()">🔑 Create New Key</button>`;
+            document.getElementById("status").textContent = "❌ No key found. Creating a new key...";
+            createNewKey();
           }
         })
         .catch(() => {
           document.getElementById("status").textContent = "❌ Network error.";
+        });
+    }
+
+    function createNewKey() {
+      fetch("/create_key", { method: "POST" })
+        .then(res => res.json())
+        .then(data => {
+          showKey(data.key, data.expires_at, false);
+        })
+        .catch(() => {
+          document.getElementById("status").textContent = "❌ Failed to create a new key.";
         });
     }
 
@@ -368,8 +379,8 @@
 
         if (diff <= 0) {
           countdownEl.textContent = "Expired";
-          document.getElementById("status").textContent = "Your key has expired. You can create a new one.";
-          document.getElementById("main").innerHTML += `<button onclick="loadGetKey()">🔑 Create New Key</button>`;
+          document.getElementById("status").textContent = "Your key has expired. Creating a new key...";
+          createNewKey(); // Automatically create a new key when the countdown expires
           return;
         }
 
