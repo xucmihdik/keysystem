@@ -17,6 +17,11 @@ def get_device_id():
     user_agent = request.headers.get("User -Agent", "")
     return ip + user_agent
 
+def format_expiry(expiry):
+    """Convert expiry string to a more readable format."""
+    date = datetime.fromisoformat(expiry)
+    return date.strftime("%B %d, %Y %I:%M %p")  # Example: July 22, 2025 08:36 AM
+
 def clean_expired_keys():
     """Remove expired keys from the KEYS and USED_IPS dictionaries."""
     current_time = datetime.utcnow()
@@ -28,10 +33,6 @@ def clean_expired_keys():
             if k == key:
                 del USED_IPS[ip]
                 break
-
-def format_expiry(expiry):
-    """Format the expiry date to a readable string."""
-    return datetime.fromisoformat(expiry).strftime("%Y-%m-%d %H:%M:%S")
 
 @app.route("/")
 def home():
