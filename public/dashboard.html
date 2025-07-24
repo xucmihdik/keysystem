@@ -158,7 +158,6 @@
   <div class="container">
     <h1>Clark KeySystem - Admin Dashboard</h1>
     <p>Welcome to the admin panel. You can manage keys below.</p>
-
     <h2>All Keys</h2>
     <div id="keysContainer">
       <!-- Keys are rendered here by Jinja2 -->
@@ -166,9 +165,8 @@
         <div class="key-box" id="key-{{ key }}">
           <span class="key-text">{{ key }}</span>
           <span class="key-text">Valid until: {{ format_expiry(info.expires_at) }}</span>
-          <!-- Use the format_countdown function passed from Flask -->
-          <span class="countdown-text" id="countdown-{{ key }}">⏳ Time remaining: {{ format_countdown(info.remaining_seconds) }}</span>
-
+          <!-- Use the format_countdown function passed from Flask for initial display -->
+          <span class="countdown-text" id="countdown-{{ key }}">⏳ Expires in: {{ format_countdown(info.remaining_seconds) }}</span>
           <div class="button-group">
             <button onclick="copyKey('{{ key }}')">Copy</button>
             <button onclick="deleteKey('{{ key }}')">Delete</button>
@@ -186,7 +184,6 @@
         </script>
       {% endfor %}
     </div>
-
     <h2>Create New Key</h2>
     <button onclick="createKey()">Create Key</button>
     <button id="logoutButton" onclick="logout()">Logout</button>
@@ -345,11 +342,8 @@
     }
 
     function logout() {
-      // Clear any running intervals on logout if necessary
-      // This global function should be defined or called from a central place
-      // clearAllDashboardCountdowns(); // Hypothetical global cleanup function
-      // Or, redirect to the Flask logout route which handles session clearing
-      window.location.href = "/logout"; // Use the Flask logout route
+      // Redirect to the Flask logout route
+      window.location.href = "/logout";
     }
 
     // --- Key Display and Countdown Functions ---
@@ -373,7 +367,7 @@
       keyBox.innerHTML = `
         <span class="key-text">${key}</span>
         <span class="key-text">Valid until: ${formattedExpiry}</span>
-        <span class="countdown-text" id="countdown-${key}">⏳ Time remaining: ${formatCountdownJS(remainingSeconds)}</span>
+        <span class="countdown-text" id="countdown-${key}">⏳ Expires in: ${formatCountdownJS(remainingSeconds)}</span>
         <div class="button-group">
           <button onclick="copyKey('${key}')">Copy</button>
           <button onclick="deleteKey('${key}')">Delete</button>
@@ -411,14 +405,15 @@
 
         // Function to update the display
         const updateDisplay = () => {
-            if (document.getElementById(`key-${key}`)) { // Check if key element still exists
+            // Check if the key element still exists
+            if (document.getElementById(`key-${key}`)) {
                  if (countdownElement) { // Check if countdown element still exists
-                     countdownElement.textContent = `⏳ Time remaining: ${formatCountdownJS(secondsLeft)}`;
+                     countdownElement.textContent = `⏳ Expires in: ${formatCountdownJS(secondsLeft)}`;
                  }
                  secondsLeft--;
                  if (secondsLeft < 0) {
                      if (countdownElement) {
-                          countdownElement.textContent = "⏳ Time remaining: Expired";
+                          countdownElement.textContent = "⏳ Expires in: Expired";
                      }
                      clearInterval(window.dashboardCountdownIntervals[key]);
                      delete window.dashboardCountdownIntervals[key]; // Clean up reference
@@ -438,24 +433,6 @@
         // Set interval and store ID globally
         window.dashboardCountdownIntervals[key] = setInterval(updateDisplay, 1000);
     }
-
-    // Optional: Function to clear all dashboard countdowns (e.g., on logout - called from logout())
-    // function clearAllDashboardCountdowns() {
-    //     if (window.dashboardCountdownIntervals) {
-    //         for (const key in window.dashboardCountdownIntervals) {
-    //             if (window.dashboardCountdownIntervals.hasOwnProperty(key)) {
-    //                 clearInterval(window.dashboardCountdownIntervals[key]);
-    //             }
-    //         }
-    //         window.dashboardCountdownIntervals = {}; // Reset the global object
-    //     }
-    // }
-
-    // Optional: Jinja2 filter helper in Python (if needed in template directly)
-    // You can add this in your Flask app context if you prefer template-side formatting
-    // def format_countdown(seconds):
-    //     return formatCountdownJS(seconds) # Reuse JS logic or implement in Python
-    // app.jinja_env.globals.update(format_countdown=format_countdown)
 
   </script>
 </body>
