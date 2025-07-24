@@ -161,12 +161,12 @@
 
     <h2>All Keys</h2>
     <div id="keysContainer">
-      <!-- Pass keys_with_info from the modified Flask route -->
+      <!-- Keys are rendered here by Jinja2 -->
       {% for key, info in keys.items() %}
         <div class="key-box" id="key-{{ key }}">
           <span class="key-text">{{ key }}</span>
           <span class="key-text">Valid until: {{ format_expiry(info.expires_at) }}</span>
-          <!-- Add countdown display -->
+          <!-- Use the format_countdown function passed from Flask -->
           <span class="countdown-text" id="countdown-{{ key }}">⏳ Time remaining: {{ format_countdown(info.remaining_seconds) }}</span>
 
           <div class="button-group">
@@ -179,12 +179,11 @@
           </div>
           <button onclick="toggleManage('{{ key }}')">Manage</button>
         </div>
-         <!-- Start countdown for this key -->
-         <script>
-             document.addEventListener('DOMContentLoaded', function() {
-                 startCountdownForDashboard('{{ key }}', {{ info.remaining_seconds }});
-             });
-         </script>
+        <!-- Script to start the countdown for this key after it's rendered -->
+        <script>
+             // Use the remaining_seconds passed from Flask to start the JS countdown
+             startCountdownForDashboard('{{ key }}', {{ info.remaining_seconds }});
+        </script>
       {% endfor %}
     </div>
 
