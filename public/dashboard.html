@@ -11,15 +11,16 @@
       padding: 0;
     }
     html, body {
-      height: 100%;
+      /* height: 100%; */ /* Removed to allow scrolling if content is long */
       width: 100%;
-      overflow: hidden;
+      /* overflow: hidden; */ /* Removed to allow scrolling */
       font-family: 'Segoe UI', sans-serif;
       background: #000;
       display: flex;
       justify-content: center;
-      align-items: center;
+      /* align-items: center; */ /* Removed to prevent vertical centering if content is long */
       position: relative;
+      color: #fff; /* Set default text color */
     }
     .container {
       z-index: 2;
@@ -28,14 +29,20 @@
       padding: 24px 20px;
       width: 90%;
       max-width: 600px;
-      text-align: center;
+      /* text-align: center; */ /* Removed for better control of child elements */
       border: 2px solid #fff;
       box-shadow: 0 0 30px rgba(255, 255, 255, 0.6);
+      margin: 20px auto; /* Added margin for top/bottom and auto for horizontal centering */
     }
-    h1 {
+    h1, h2 {
       font-size: 1.7rem;
       margin-bottom: 12px;
       color: #fff;
+      text-align: center; /* Center headings */
+    }
+    h2 {
+       font-size: 1.4rem;
+       margin-top: 20px; /* Add space above h2 */
     }
     .key-box {
       background: #fff;
@@ -53,6 +60,13 @@
       font-weight: bold;
       font-size: 1rem;
       width: 100%;
+    }
+    /* Style for the countdown display */
+    .countdown-text {
+       font-weight: bold;
+       color: #ffcc00; /* Example color */
+       font-size: 0.9em;
+       width: 100%; /* Ensure full width */
     }
     button {
       background: #fff;
@@ -74,14 +88,27 @@
       align-items: center;
       gap: 10px;
       width: 100%; /* Ensure it takes full width */
+      flex-wrap: wrap; /* Allow items to wrap on small screens if needed */
     }
     .manage-key input {
       width: 60px;
+      padding: 5px; /* Add padding for better appearance */
     }
     .button-group {
       display: flex;
-      justify-content: space-between; /* Space buttons evenly */
+      /* justify-content: space-between; */ /* Space buttons evenly */
+      gap: 10px; /* Use gap for spacing */
       width: 100%; /* Ensure it takes full width */
+      flex-wrap: wrap; /* Allow buttons to wrap if container is narrow */
+    }
+    .button-group button {
+        flex: 1; /* Buttons share available space */
+        min-width: calc(50% - 5px); /* Minimum width for buttons (adjusts based on gap) */
+    }
+    .manage-key button {
+        flex: none; /* Manage button doesn't flex */
+        width: auto; /* Auto width for manage button */
+        min-width: 0; /* Override min-width */
     }
     .notification {
       position: fixed;
@@ -100,35 +127,73 @@
       from { opacity: 0; }
       to { opacity: 1; }
     }
+    /* Style for logout button */
+    #logoutButton {
+        background-color: #dc3545; /* Red background */
+        color: white;
+    }
+    #logoutButton:hover {
+        background-color: #c82333; /* Darker red on hover */
+        color: white;
+    }
+     /* Responsive adjustments */
+    @media (max-width: 480px) {
+        .button-group {
+            flex-direction: column; /* Stack buttons vertically on small screens */
+        }
+        .button-group button {
+            min-width: 100%; /* Full width on small screens */
+        }
+        .manage-key {
+            flex-direction: column; /* Stack manage input/button vertically */
+            align-items: stretch; /* Stretch items to full width */
+        }
+        .manage-key input, .manage-key button {
+             width: 100%; /* Full width for input/button */
+        }
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>Clark KeySystem - Admin Dashboard</h1>
     <p>Welcome to the admin panel. You can manage keys below.</p>
+
     <h2>All Keys</h2>
     <div id="keysContainer">
-      {% for key, expiry in keys.items() %}
+      <!-- Pass keys_with_info from the modified Flask route -->
+      {% for key, info in keys.items() %}
         <div class="key-box" id="key-{{ key }}">
           <span class="key-text">{{ key }}</span>
-          <span class="key-text" id="countdown-{{ key }}">Valid until: {{ format_expiry(expiry) }}</span>
+          <span class="key-text">Valid until: {{ format_expiry(info.expires_at) }}</span>
+          <!-- Add countdown display -->
+          <span class="countdown-text" id="countdown-{{ key }}">⏳ Time remaining: {{ format_countdown(info.remaining_seconds) }}</span>
+
           <div class="button-group">
             <button onclick="copyKey('{{ key }}')">Copy</button>
             <button onclick="deleteKey('{{ key }}')">Delete</button>
           </div>
           <div class="manage-key" id="manage-{{ key }}">
             <input type="number" id="days-{{ key }}" placeholder="Days" min="1" />
-            <button onclick="manageKey('{{ key }}')">Update</button>
+            <button onclick="manageKey('{{ key }}')">Update</button> <!-- Or Renew -->
           </div>
           <button onclick="toggleManage('{{ key }}')">Manage</button>
         </div>
+         <!-- Start countdown for this key -->
+         <script>
+             document.addEventListener('DOMContentLoaded', function() {
+                 startCountdownForDashboard('{{ key }}', {{ info.remaining_seconds }});
+             });
+         </script>
       {% endfor %}
     </div>
+
     <h2>Create New Key</h2>
     <button onclick="createKey()">Create Key</button>
-    <button onclick="logout()">Logout</button>
+    <button id="logoutButton" onclick="logout()">Logout</button>
   </div>
   <script>
+    // --- Helper Functions ---
     function showNotification(text) {
       const notif = document.createElement("div");
       notif.className = "notification";
@@ -137,56 +202,56 @@
       setTimeout(() => notif.remove(), 3000);
     }
 
-    function createKey() {
-      fetch("/create_key", { method: "POST" })
-        .then(res => res.json())
-        .then(data => {
-          if (data.key) {
-            showNotification(`Key created: ${data.key} (Valid until: ${data.expires_at})`);
-            addKeyToContainer(data.key, data.expires_at);
-          } else {
-            showNotification("Error creating key.");
-          }
-        });
+    function formatCountdownJS(totalSeconds) {
+       if (totalSeconds <= 0) return "Expired";
+       const hours = Math.floor(totalSeconds / 3600);
+       const minutes = Math.floor((totalSeconds % 3600) / 60);
+       const seconds = Math.floor(totalSeconds % 60);
+       return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
     }
 
-    function addKeyToContainer(key, expiry) {
-      const keysContainer = document.getElementById('keysContainer');
-      const keyBox = document.createElement('div');
-      keyBox.className = 'key-box';
-      keyBox.id = `key-${key}`;
-      keyBox.innerHTML = `
-        <span class="key-text">${key}</span>
-        <span class="key-text" id="countdown-${key}">Valid until: ${formatExpiry(expiry)}</span>
-        <div class="button-group">
-          <button onclick="copyKey('${key}')">Copy</button>
-          <button onclick="deleteKey('${key}')">Delete</button>
-        </div>
-        <div class="manage-key" id="manage-${key}">
-          <input type="number" id="days-${key}" placeholder="Days" min="1" />
-          <button onclick="manageKey('${key}')">Update</button>
-        </div>
-        <button onclick="toggleManage('${key}')">Manage</button>
-      `;
-      keysContainer.appendChild(keyBox);
-      startCountdown(key, expiry); // Start countdown for the new key
-    }
-
+    // --- UI Interaction Functions ---
     function toggleManage(key) {
       const manageKeyDiv = document.getElementById(`manage-${key}`);
-      if (manageKeyDiv.style.display === "none" || manageKeyDiv.style.display === "") {
-        manageKeyDiv.style.display = "flex"; // Show the manage input
-      } else {
-        manageKeyDiv.style.display = "none"; // Hide the manage input
+      if (manageKeyDiv) {
+        if (manageKeyDiv.style.display === "none" || manageKeyDiv.style.display === "") {
+          manageKeyDiv.style.display = "flex"; // Show the manage input
+        } else {
+          manageKeyDiv.style.display = "none"; // Hide the manage input
+        }
       }
     }
 
     function copyKey(key) {
-      navigator.clipboard.writeText(key).then(() => {
-        showNotification(`Key copied: ${key}`);
-      }).catch(err => {
-        showNotification("Failed to copy key.");
-      });
+      navigator.clipboard.writeText(key)
+        .then(() => showNotification(`✅ Key copied: ${key}`))
+        .catch(err => {
+            console.error("Copy failed:", err);
+            showNotification("❌ Failed to copy key.");
+        });
+    }
+
+    // --- API Interaction Functions ---
+    function createKey() {
+      fetch("/create_key", { method: "POST" })
+        .then(res => {
+             if (!res.ok) {
+                 return res.json().then(err => { throw new Error(err.error || 'Unknown error'); });
+             }
+             return res.json();
+        })
+        .then(data => {
+          if (data.key && data.remaining_seconds !== undefined) {
+            showNotification(`✅ Key created: ${data.key}`);
+            addKeyToContainer(data.key, data.expires_at, data.remaining_seconds); // Pass remaining seconds
+          } else {
+            showNotification("❌ Error creating key: Unexpected response format.");
+          }
+        })
+        .catch(err => {
+             console.error("Create Key Error:", err);
+             showNotification("❌ Error creating key: " + err.message);
+        });
     }
 
     function deleteKey(key) {
@@ -198,21 +263,37 @@
         body: JSON.stringify({ key: key })
       })
       .then(res => {
-        if (res.ok) {
-          showNotification(`Key deleted: ${key}`);
+          if (!res.ok) {
+              return res.json().then(err => { throw new Error(err.error || 'Unknown error'); });
+          }
+          return res.json(); // Expecting { "success": true }
+      })
+      .then(data => {
+        if (data.success) {
+          showNotification(`✅ Key deleted: ${key}`);
           const keyBox = document.getElementById(`key-${key}`);
           if (keyBox) {
             keyBox.remove(); // Remove the key box from the UI
+            // Clear the interval for this key if managed (see countdown logic)
+            if (window.dashboardCountdownIntervals && window.dashboardCountdownIntervals[key]) {
+                 clearInterval(window.dashboardCountdownIntervals[key]);
+                 delete window.dashboardCountdownIntervals[key];
+            }
           }
         } else {
-          showNotification("Error deleting key.");
+          // Shouldn't happen with current backend, but good practice
+          showNotification("❌ Error deleting key (server).");
         }
+      })
+      .catch(err => {
+          console.error("Delete Key Error:", err);
+          showNotification("❌ Error deleting key: " + err.message);
       });
     }
 
     function manageKey(key) {
       const daysInput = document.getElementById(`days-${key}`);
-      const days = daysInput.value;
+      const days = daysInput ? daysInput.value : null;
       if (days && days > 0) {
         fetch("/manage_key", {
           method: "POST",
@@ -222,56 +303,161 @@
           body: JSON.stringify({ key: key, days: days })
         })
         .then(res => {
-          if (res.ok) {
-            showNotification(`Key ${key} updated to expire in ${days} days.`);
-            // Update the expiry date in the UI
-            const newExpiry = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
-            const keyBox = document.getElementById(`key-${key}`);
-            if (keyBox) {
-              const expiryText = keyBox.querySelector('.key-text:nth-child(2)');
-              expiryText.textContent = `Valid until: ${formatExpiry(newExpiry.toISOString())}`;
+             if (!res.ok) {
+                 return res.json().then(err => { throw new Error(err.error || 'Unknown error'); });
+             }
+             return res.json();
+        })
+        .then(data => {
+          if (data.success && data.new_remaining_seconds !== undefined) {
+            showNotification(`✅ Key ${key} updated.`); // Assuming renewal/reset logic
+
+            // Crucially, restart the countdown with the NEW time
+            const countdownEl = document.getElementById(`countdown-${key}`);
+            if (countdownEl) {
+                // Clear existing interval for this key if any
+                if (window.dashboardCountdownIntervals && window.dashboardCountdownIntervals[key]) {
+                    clearInterval(window.dashboardCountdownIntervals[key]);
+                }
+                // Restart the display logic with the new time
+                startCountdownForDashboard(key, data.new_remaining_seconds);
             }
+            // Optional: Update the 'Valid until' display text if needed
+            // const keyBox = document.getElementById(`key-${key}`);
+            // if (keyBox) {
+            //   const expiryText = keyBox.querySelector('.key-text:nth-child(2)');
+            //   if (expiryText && data.new_expiry) {
+            //      const newExpiryDate = new Date(data.new_expiry);
+            //      expiryText.textContent = `Valid until: ${newExpiryDate.toLocaleString()}`;
+            //   }
+            // }
+
           } else {
-            showNotification("Error updating key.");
+            showNotification("❌ Error updating key: Unexpected response format.");
           }
-        });
+        })
+         .catch(err => {
+             console.error("Manage Key Error:", err);
+             showNotification("❌ Error updating key: " + err.message);
+         });
       } else {
-        showNotification("Please enter a valid number of days.");
+        showNotification("⚠️ Please enter a valid number of days.");
       }
     }
 
     function logout() {
-      window.location.href = "/panel"; // Redirect to login page
+      // Clear any running intervals on logout if necessary
+      // This global function should be defined or called from a central place
+      // clearAllDashboardCountdowns(); // Hypothetical global cleanup function
+      // Or, redirect to the Flask logout route which handles session clearing
+      window.location.href = "/logout"; // Use the Flask logout route
     }
 
-    function formatExpiry(expiry) {
-      const date = new Date(expiry);
-      return date.toLocaleString(); // Format to a readable string
-    }
+    // --- Key Display and Countdown Functions ---
 
-    function startCountdown(key, expiry) {
-      const countdownEl = document.getElementById(`countdown-${key}`);
-      const expiryDate = new Date(expiry);
-
-      function updateCountdown() {
-        const now = new Date();
-        const diff = expiryDate - now;
-
-        if (diff <= 0) {
-          countdownEl.textContent = "Expired";
+    function addKeyToContainer(key, expiryISO, remainingSeconds) {
+      const keysContainer = document.getElementById('keysContainer');
+      if (!keysContainer) {
+          console.error("Keys container not found.");
           return;
+      }
+      const keyBox = document.createElement('div');
+      keyBox.className = 'key-box';
+      keyBox.id = `key-${key}`;
+
+      // Format expiry for display (using the backend's format function isn't directly possible here)
+      // We'll format it similarly to how the backend does (or use JS formatting)
+      const expiryDate = new Date(expiryISO);
+      // Use toLocaleString or a custom format function
+      const formattedExpiry = expiryDate.toLocaleString(); // Or a more specific format
+
+      keyBox.innerHTML = `
+        <span class="key-text">${key}</span>
+        <span class="key-text">Valid until: ${formattedExpiry}</span>
+        <span class="countdown-text" id="countdown-${key}">⏳ Time remaining: ${formatCountdownJS(remainingSeconds)}</span>
+        <div class="button-group">
+          <button onclick="copyKey('${key}')">Copy</button>
+          <button onclick="deleteKey('${key}')">Delete</button>
+        </div>
+        <div class="manage-key" id="manage-${key}">
+          <input type="number" id="days-${key}" placeholder="Days" min="1" />
+          <button onclick="manageKey('${key}')">Update</button>
+        </div>
+        <button onclick="toggleManage('${key}')">Manage</button>
+      `;
+      keysContainer.appendChild(keyBox);
+
+      // Start the countdown for the newly added key
+      startCountdownForDashboard(key, remainingSeconds);
+    }
+
+    // --- Countdown Functions for Dashboard ---
+    // Keep track of intervals per key to manage them better
+    // Use a global object attached to window to persist intervals
+    window.dashboardCountdownIntervals = window.dashboardCountdownIntervals || {};
+
+    function startCountdownForDashboard(key, initialSeconds) {
+        // Clear any existing interval for this specific key
+        if (window.dashboardCountdownIntervals[key]) {
+            clearInterval(window.dashboardCountdownIntervals[key]);
         }
 
-        const hours = Math.floor(diff / (1000 * 60 * 60));
-        const minutes = Math.floor((diff / (1000 * 60)) % 60);
-        const seconds = Math.floor((diff / 1000) % 60);
+        let secondsLeft = initialSeconds;
+        const countdownElement = document.getElementById(`countdown-${key}`);
 
-        countdownEl.textContent = `Valid until: ${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-      }
+        if (!countdownElement) {
+            console.warn(`Countdown element for key ${key} not found.`);
+            return; // Exit if element doesn't exist (e.g., key deleted)
+        }
 
-      updateCountdown(); // Show immediately
-      setInterval(updateCountdown, 1000); // Update every second
+        // Function to update the display
+        const updateDisplay = () => {
+            if (document.getElementById(`key-${key}`)) { // Check if key element still exists
+                 if (countdownElement) { // Check if countdown element still exists
+                     countdownElement.textContent = `⏳ Time remaining: ${formatCountdownJS(secondsLeft)}`;
+                 }
+                 secondsLeft--;
+                 if (secondsLeft < 0) {
+                     if (countdownElement) {
+                          countdownElement.textContent = "⏳ Time remaining: Expired";
+                     }
+                     clearInterval(window.dashboardCountdownIntervals[key]);
+                     delete window.dashboardCountdownIntervals[key]; // Clean up reference
+                     // Optionally trigger a refresh of the key list or remove the element
+                     // For now, manual refresh or delete key action handles UI update
+                 }
+            } else {
+                // Key element was removed (e.g., deleted), clear interval
+                 clearInterval(window.dashboardCountdownIntervals[key]);
+                 delete window.dashboardCountdownIntervals[key];
+            }
+        };
+
+        // Initial update
+        updateDisplay();
+
+        // Set interval and store ID globally
+        window.dashboardCountdownIntervals[key] = setInterval(updateDisplay, 1000);
     }
+
+    // Optional: Function to clear all dashboard countdowns (e.g., on logout - called from logout())
+    // function clearAllDashboardCountdowns() {
+    //     if (window.dashboardCountdownIntervals) {
+    //         for (const key in window.dashboardCountdownIntervals) {
+    //             if (window.dashboardCountdownIntervals.hasOwnProperty(key)) {
+    //                 clearInterval(window.dashboardCountdownIntervals[key]);
+    //             }
+    //         }
+    //         window.dashboardCountdownIntervals = {}; // Reset the global object
+    //     }
+    // }
+
+    // Optional: Jinja2 filter helper in Python (if needed in template directly)
+    // You can add this in your Flask app context if you prefer template-side formatting
+    // def format_countdown(seconds):
+    //     return formatCountdownJS(seconds) # Reuse JS logic or implement in Python
+    // app.jinja_env.globals.update(format_countdown=format_countdown)
+
   </script>
 </body>
 </html>
