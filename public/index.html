@@ -194,7 +194,7 @@
   <div class="container popup-animation" id="main">
     <h1>Clark KeySystem</h1>
     <p>Welcome! Thanks for using my script — hope it helps you a lot.<br>
-    For updates or help, feel free to join my <a href="https://discord.gg/AhzY5DCktP" style="color: #00f;">Discord</a>.</p>
+    For updates or help, feel free to join my <a href="https://discord.gg/AhzY5DCktP" style="color: #00f;">Discord Server</a>.</p>
   </div>
 
   <script>
@@ -282,7 +282,7 @@
 
       // Parse the expiry date correctly
       const expiryDate = new Date(expiry);
-      const formattedExpiry = expiryDate.toLocaleString(); // Format to a readable string
+      const formattedExpiry = expiryDate.toUTCString(); // Format to UTC string
 
       document.getElementById("main").innerHTML = `
         <h1>${isOld ? "🔁 Key already created" : "✅ Key Generated!"}</h1>
