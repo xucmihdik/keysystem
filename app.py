@@ -186,7 +186,8 @@ def all_keys():
 
 def generate_key(ip):
     key = f"clark-{uuid.uuid4().hex[:12]}"
-    expires_at = datetime.utcnow() + timedelta(hours=24)
+    now = datetime.now()  # ← use local time instead of utcnow
+    expires_at = now + timedelta(hours=24)
     KEYS[key] = expires_at.isoformat()
     USED_IPS[ip] = key
     return key, expires_at.isoformat()
