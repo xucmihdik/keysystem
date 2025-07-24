@@ -13,12 +13,13 @@
     html, body {
       height: 100%;
       width: 100%;
-      overflow: hidden;
+      overflow: auto; /* Changed from hidden to allow scrolling */
       font-family: 'Segoe UI', sans-serif;
       background: #000;
       display: flex;
       justify-content: center;
-      align-items: center;
+      align-items: flex-start; /* Changed from center to align top */
+      padding: 20px 0; /* Added padding */
       position: relative;
     }
     .container {
@@ -31,6 +32,7 @@
       text-align: center;
       border: 2px solid #fff;
       box-shadow: 0 0 30px rgba(255, 255, 255, 0.6);
+      margin: 20px 0; /* Added margin */
     }
     h1 {
       font-size: 1.7rem;
@@ -47,7 +49,7 @@
       flex-direction: column;
       align-items: flex-start;
       gap: 10px;
-      word-break: break-word;
+      word-break: break-all; /* Changed from break-word for better handling */
     }
     .key-text {
       font-weight: bold;
@@ -70,18 +72,26 @@
       color: #fff;
     }
     .manage-key {
-      display: none; /* Initially hidden */
+      display: none;
       align-items: center;
       gap: 10px;
-      width: 100%; /* Ensure it takes full width */
+      width: 100%;
+      margin-top: 10px;
     }
     .manage-key input {
       width: 60px;
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
     }
     .button-group {
       display: flex;
-      justify-content: space-between; /* Space buttons evenly */
-      width: 100%; /* Ensure it takes full width */
+      justify-content: space-between;
+      width: 100%;
+      gap: 10px;
+    }
+    .button-group button {
+      flex: 1;
     }
     .notification {
       position: fixed;
@@ -97,8 +107,20 @@
       animation: fadeInNotif 0.3s forwards;
     }
     @keyframes fadeInNotif {
-      from { opacity: 0; }
-      to { opacity: 1; }
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    #keysContainer {
+      max-height: 400px;
+      overflow-y: auto;
+      padding-right: 5px;
+    }
+    #keysContainer::-webkit-scrollbar {
+      width: 5px;
+    }
+    #keysContainer::-webkit-scrollbar-thumb {
+      background: #fff;
+      border-radius: 5px;
     }
   </style>
 </head>
@@ -128,7 +150,11 @@
     <button onclick="createKey()">Create Key</button>
     <button onclick="logout()">Logout</button>
   </div>
+
   <script>
+    // Track all active countdown intervals
+    const countdownIntervals = {};
+
     function showNotification(text) {
       const notif = document.createElement("div");
       notif.className = "notification";
@@ -138,16 +164,24 @@
     }
 
     function createKey() {
-      fetch("/create_key", { method: "POST" })
-        .then(res => res.json())
-        .then(data => {
-          if (data.key) {
-            showNotification(`Key created: ${data.key} (Valid until: ${data.expires_at})`);
-            addKeyToContainer(data.key, data.expires_at);
-          } else {
-            showNotification("Error creating key.");
-          }
-        });
+      fetch("/create_key", { 
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.key) {
+          showNotification(`Key created: ${data.key}`);
+          addKeyToContainer(data.key, data.expires_at);
+        } else {
+          showNotification("Error creating key.");
+        }
+      })
+      .catch(err => {
+        showNotification("Network error. Please try again.");
+      });
     }
 
     function addKeyToContainer(key, expiry) {
@@ -157,7 +191,7 @@
       keyBox.id = `key-${key}`;
       keyBox.innerHTML = `
         <span class="key-text">${key}</span>
-        <span class="key-text" id="countdown-${key}">Valid until: ${formatExpiry(expiry)}</span>
+        <span class="key-text" id="countdown-${key}">Loading expiry...</span>
         <div class="button-group">
           <button onclick="copyKey('${key}')">Copy</button>
           <button onclick="deleteKey('${key}')">Delete</button>
@@ -168,28 +202,24 @@
         </div>
         <button onclick="toggleManage('${key}')">Manage</button>
       `;
-      keysContainer.appendChild(keyBox);
-      startCountdown(key, expiry); // Start countdown for the new key
+      keysContainer.prepend(keyBox); // Add new keys at the top
+      startCountdown(key, expiry);
     }
 
     function toggleManage(key) {
       const manageKeyDiv = document.getElementById(`manage-${key}`);
-      if (manageKeyDiv.style.display === "none" || manageKeyDiv.style.display === "") {
-        manageKeyDiv.style.display = "flex"; // Show the manage input
-      } else {
-        manageKeyDiv.style.display = "none"; // Hide the manage input
-      }
+      manageKeyDiv.style.display = manageKeyDiv.style.display === "flex" ? "none" : "flex";
     }
 
     function copyKey(key) {
-      navigator.clipboard.writeText(key).then(() => {
-        showNotification(`Key copied: ${key}`);
-      }).catch(err => {
-        showNotification("Failed to copy key.");
-      });
+      navigator.clipboard.writeText(key)
+        .then(() => showNotification(`Copied: ${key}`))
+        .catch(() => showNotification("Failed to copy key"));
     }
 
     function deleteKey(key) {
+      if (!confirm(`Are you sure you want to delete key: ${key}?`)) return;
+      
       fetch("/delete_key", {
         method: "POST",
         headers: {
@@ -197,81 +227,125 @@
         },
         body: JSON.stringify({ key: key })
       })
-      .then(res => {
-        if (res.ok) {
-          showNotification(`Key deleted: ${key}`);
-          const keyBox = document.getElementById(`key-${key}`);
-          if (keyBox) {
-            keyBox.remove(); // Remove the key box from the UI
-          }
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          showNotification(`Deleted key: ${key}`);
+          clearCountdown(key);
+          document.getElementById(`key-${key}`).remove();
         } else {
-          showNotification("Error deleting key.");
+          showNotification("Error deleting key");
         }
+      })
+      .catch(err => {
+        showNotification("Network error. Please try again.");
       });
     }
 
     function manageKey(key) {
       const daysInput = document.getElementById(`days-${key}`);
-      const days = daysInput.value;
-      if (days && days > 0) {
-        fetch("/manage_key", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ key: key, days: days })
-        })
-        .then(res => {
-          if (res.ok) {
-            showNotification(`Key ${key} updated to expire in ${days} days.`);
-            // Update the expiry date in the UI
-            const newExpiry = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
-            const keyBox = document.getElementById(`key-${key}`);
-            if (keyBox) {
-              const expiryText = keyBox.querySelector('.key-text:nth-child(2)');
-              expiryText.textContent = `Valid until: ${formatExpiry(newExpiry.toISOString())}`;
-            }
-          } else {
-            showNotification("Error updating key.");
-          }
-        });
-      } else {
-        showNotification("Please enter a valid number of days.");
+      const days = parseInt(daysInput.value);
+      
+      if (!days || days < 1) {
+        showNotification("Please enter a valid number of days (1 or more)");
+        return;
       }
+
+      fetch("/manage_key", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ 
+          key: key, 
+          days: days 
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          showNotification(`Key extended by ${days} days`);
+          clearCountdown(key);
+          startCountdown(key, data.new_expiry);
+          document.getElementById(`manage-${key}`).style.display = "none";
+          daysInput.value = "";
+        } else {
+          showNotification("Error updating key");
+        }
+      })
+      .catch(err => {
+        showNotification("Network error. Please try again.");
+      });
     }
 
     function logout() {
-      window.location.href = "/panel"; // Redirect to login page
+      fetch("/logout", { method: "POST" })
+        .then(() => window.location.href = "/panel")
+        .catch(() => window.location.href = "/panel");
     }
 
     function formatExpiry(expiry) {
-      const date = new Date(expiry);
-      return date.toLocaleString(); // Format to a readable string
+      try {
+        const date = new Date(expiry);
+        return date.toLocaleString();
+      } catch (e) {
+        return "Invalid date";
+      }
     }
 
     function startCountdown(key, expiry) {
+      // Clear any existing countdown for this key
+      clearCountdown(key);
+      
       const countdownEl = document.getElementById(`countdown-${key}`);
       const expiryDate = new Date(expiry);
-
+      
+      // Initial update
+      updateCountdown();
+      
+      // Store the interval
+      countdownIntervals[key] = setInterval(updateCountdown, 1000);
+      
       function updateCountdown() {
         const now = new Date();
         const diff = expiryDate - now;
-
+        
         if (diff <= 0) {
-          countdownEl.textContent = "Expired";
+          countdownEl.textContent = "EXPIRED";
+          clearCountdown(key);
           return;
         }
-
-        const hours = Math.floor(diff / (1000 * 60 * 60));
+        
+        // Calculate time components
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
         const minutes = Math.floor((diff / (1000 * 60)) % 60);
         const seconds = Math.floor((diff / 1000) % 60);
-
-        countdownEl.textContent = `Valid until: ${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+        
+        // Format based on remaining time
+        if (days > 0) {
+          countdownEl.textContent = `Expires in: ${days}d ${hours}h ${minutes}m`;
+        } else if (hours > 0) {
+          countdownEl.textContent = `Expires in: ${hours}h ${minutes}m ${seconds}s`;
+        } else {
+          countdownEl.textContent = `Expires in: ${minutes}m ${seconds}s`;
+        }
       }
-
-      updateCountdown(); // Show immediately
-      setInterval(updateCountdown, 1000); // Update every second
     }
+
+    function clearCountdown(key) {
+      if (countdownIntervals[key]) {
+        clearInterval(countdownIntervals[key]);
+        delete countdownIntervals[key];
+      }
+    }
+
+    // Initialize countdowns for existing keys on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      {% for key, expiry in keys.items() %}
+        startCountdown('{{ key }}', '{{ expiry }}');
+      {% endfor %}
+    });
   </script>
 </body>
 </html>
