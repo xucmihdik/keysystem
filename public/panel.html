@@ -10,122 +10,482 @@
       margin: 0;
       padding: 0;
     }
+
     html, body {
       height: 100%;
       width: 100%;
-      /* overflow: hidden; */ /* Removed to allow normal scrolling if needed */
-      font-family: 'Segoe UI', sans-serif;
+      overflow: hidden;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: #000;
       display: flex;
       justify-content: center;
       align-items: center;
       position: relative;
-      color: #fff; /* Set default text color */
     }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 0;
+    }
+
     .container {
       z-index: 2;
-      background: rgba(0, 0, 0, 0.75);
-      border-radius: 16px;
-      padding: 24px 20px;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(20px);
+      border-radius: 24px;
+      padding: 40px 32px;
       width: 90%;
-      max-width: 400px;
-      /* text-align: center; */ /* Removed for better control */
-      border: 2px solid #fff;
-      box-shadow: 0 0 30px rgba(255, 255, 255, 0.6);
+      max-width: 450px;
+      text-align: center;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 60px rgba(255, 255, 255, 0.1);
+      animation: containerPopup 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
+
+    @keyframes containerPopup {
+      from { 
+        opacity: 0; 
+        transform: scale(0.8) translateY(20px); 
+      }
+      to { 
+        opacity: 1; 
+        transform: scale(1) translateY(0); 
+      }
+    }
+
     h1 {
-      font-size: 1.7rem;
-      margin-bottom: 20px; /* Increased margin */
+      font-size: 2.2rem;
+      margin-bottom: 16px;
       color: #fff;
-      text-align: center; /* Center the heading */
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
     }
+
+    .title-divider {
+      width: 64px;
+      height: 4px;
+      background: linear-gradient(90deg, #60a5fa, #a855f7);
+      margin: 0 auto 32px;
+      border-radius: 2px;
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes glow {
+      from { box-shadow: 0 0 10px rgba(96, 165, 250, 0.5); }
+      to { box-shadow: 0 0 20px rgba(168, 85, 247, 0.8); }
+    }
+
+    .form-container {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 32px 24px;
+      margin: 24px 0;
+    }
+
     label {
-       display: block;
-       margin-bottom: 5px;
-       font-weight: bold;
-       text-align: left; /* Align labels to the left */
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      text-align: left;
+      color: #d1d5db;
+      font-size: 0.95rem;
+      letter-spacing: 0.3px;
     }
+
+    .input-group {
+      position: relative;
+      margin-bottom: 24px;
+    }
+
     input {
       width: 100%;
-      padding: 12px; /* Increased padding */
-      margin-bottom: 15px; /* Increased margin */
-      border: 1px solid #ccc; /* Added border */
-      border-radius: 5px;
-      background-color: #333; /* Darker background for input */
-      color: #fff; /* White text */
-    }
-    input:focus {
-        outline: none;
-        border-color: #007bff; /* Blue border on focus */
-    }
-    button {
-      background: #fff;
-      color: #000;
-      border: none;
-      padding: 12px; /* Increased padding */
-      border-radius: 5px;
-      cursor: pointer;
-      transition: 0.3s ease;
-      width: 100%;
-      margin-top: 10px; /* Margin above the button */
-      font-size: 1rem; /* Consistent font size */
-    }
-    button:hover {
-      background: #111;
+      padding: 16px 20px;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
       color: #fff;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      outline: none;
     }
+
+    input::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    input:focus {
+      border-color: #60a5fa;
+      background: rgba(96, 165, 250, 0.1);
+      box-shadow: 0 0 20px rgba(96, 165, 250, 0.2);
+      transform: translateY(-2px);
+    }
+
+    input:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .btn {
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      color: #fff;
+      border: none;
+      padding: 16px 24px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+      position: relative;
+      overflow: hidden;
+      margin-top: 24px;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    .btn:hover::before {
+      left: 100%;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+    }
+
+    .btn:active {
+      transform: translateY(0) scale(0.98);
+    }
+
+    .btn-icon {
+      width: 20px;
+      height: 20px;
+      transition: transform 0.3s ease;
+    }
+
+    .btn:hover .btn-icon {
+      transform: scale(1.1);
+    }
+
     .error {
-      color: #ff4d4d; /* Red color for errors */
-      background-color: rgba(255, 0, 0, 0.1); /* Light red background */
-      padding: 10px;
-      border-radius: 5px;
-      margin-bottom: 15px; /* Space below error message */
+      color: #ef4444;
+      background: rgba(239, 68, 68, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      padding: 16px 20px;
+      border-radius: 12px;
+      margin-bottom: 24px;
       text-align: center;
-      display: block; /* Ensure it's displayed as a block element */
+      font-weight: 500;
+      animation: errorShake 0.5s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
     }
+
+    @keyframes errorShake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
     .error.hidden {
-        display: none; /* Hidden class to hide error when not needed */
+      display: none;
+    }
+
+    .error-icon {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    .admin-icon {
+      width: 32px;
+      height: 32px;
+    }
+
+    /* Loading state */
+    .btn.loading {
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    .btn.loading .btn-text {
+      opacity: 0;
+    }
+
+    .btn.loading::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border: 2px solid transparent;
+      border-top: 2px solid #fff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 640px) {
+      .container {
+        width: 95%;
+        padding: 32px 24px;
+      }
+      
+      h1 {
+        font-size: 1.8rem;
+      }
+      
+      .form-container {
+        padding: 24px 20px;
+      }
     }
   </style>
 </head>
 <body>
+  <canvas id="bgCanvas"></canvas>
+  
   <div class="container" id="loginContainer">
-    <h1>Admin Login</h1>
-    <!-- Display error message if it exists -->
-    <!-- The error message is passed from the Flask route -->
-    {% if error %}
-      <div id="loginError" class="error">{{ error }}</div>
-    {% else %}
-      <div id="loginError" class="error hidden"></div>
-    {% endif %}
-
-    <form id="loginForm" method="POST" action="/panel">
-      <label for="username">Username:</label>
-      <input type="text" id="username" name="username" placeholder="Enter username" required />
-
-      <label for="password">Password:</label>
-      <input type="password" id="password" name="password" placeholder="Enter password" required />
-
-      <button type="submit">Login</button>
-    </form>
+    <h1>
+      <svg class="admin-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.031 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+      </svg>
+      Admin Login
+    </h1>
+    <div class="title-divider"></div>
+    
+    <div class="form-container">
+      <!-- Display error message if it exists -->
+      {% if error %}
+        <div id="loginError" class="error">
+          <svg class="error-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <span>{{ error }}</span>
+        </div>
+      {% else %}
+        <div id="loginError" class="error hidden">
+          <svg class="error-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <span></span>
+        </div>
+      {% endif %}
+      
+      <form id="loginForm" method="POST" action="/panel">
+        <div class="input-group">
+          <label for="username">
+            <svg style="width: 16px; height: 16px; display: inline-block; margin-right: 8px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+            </svg>
+            Username
+          </label>
+          <input type="text" id="username" name="username" placeholder="Enter your username" required />
+        </div>
+        
+        <div class="input-group">
+          <label for="password">
+            <svg style="width: 16px; height: 16px; display: inline-block; margin-right: 8px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+            </svg>
+            Password
+          </label>
+          <input type="password" id="password" name="password" placeholder="Enter your password" required />
+        </div>
+        
+        <button type="submit" class="btn" id="loginBtn">
+          <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+          </svg>
+          <span class="btn-text">Login</span>
+        </button>
+      </form>
+    </div>
   </div>
 
   <script>
-    // Optional: Basic client-side validation or enhancements can be added here
-    // For now, the form submits to the Flask backend which handles authentication.
+    let particles = [];
+    let animationId = null;
+
+    // Enhanced Background Animation (same as main page)
+    const canvas = document.getElementById("bgCanvas");
+    const ctx = canvas.getContext("2d");
+    
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      
+      // Reinitialize particles after resize
+      particles = Array.from({ length: 100 }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        size: Math.random() * 3 + 1,
+        speedX: (Math.random() - 0.5) * 1,
+        speedY: (Math.random() - 0.5) * 1,
+        color: Math.random() > 0.7 ? '#ffffff' : '#666666',
+        opacity: Math.random() * 0.8 + 0.2,
+        pulse: Math.random() * Math.PI * 2
+      }));
+    }
+    
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+
+    // Initialize enhanced particles
+    particles = Array.from({ length: 100 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      size: Math.random() * 3 + 1,
+      speedX: (Math.random() - 0.5) * 1,
+      speedY: (Math.random() - 0.5) * 1,
+      color: Math.random() > 0.7 ? '#ffffff' : '#666666',
+      opacity: Math.random() * 0.8 + 0.2,
+      pulse: Math.random() * Math.PI * 2
+    }));
+
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Create gradient background
+      const gradient = ctx.createRadialGradient(
+        canvas.width / 2, canvas.height / 2, 0,
+        canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) / 2
+      );
+      gradient.addColorStop(0, 'rgba(0, 0, 0, 0.9)');
+      gradient.addColorStop(1, 'rgba(0, 0, 0, 1)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw enhanced particles
+      particles.forEach(particle => {
+        ctx.beginPath();
+        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+        
+        // Enhanced pulsing effect
+        particle.pulse += 0.02;
+        const pulseOpacity = particle.opacity + Math.sin(particle.pulse) * 0.3;
+        ctx.globalAlpha = Math.max(0.1, Math.min(0.9, pulseOpacity));
+        
+        ctx.fillStyle = particle.color;
+        ctx.fill();
+        
+        // Add glow effect for white particles
+        if (particle.color === '#ffffff') {
+          ctx.shadowColor = '#ffffff';
+          ctx.shadowBlur = 10;
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        }
+        
+        ctx.globalAlpha = 1;
+
+        // Update position
+        particle.x += particle.speedX;
+        particle.y += particle.speedY;
+
+        // Wrap around edges
+        if (particle.x < 0) particle.x = canvas.width;
+        if (particle.x > canvas.width) particle.x = 0;
+        if (particle.y < 0) particle.y = canvas.height;
+        if (particle.y > canvas.height) particle.y = 0;
+      });
+
+      animationId = requestAnimationFrame(animateParticles);
+    }
+
+    animateParticles();
+
+    // Enhanced form validation and submission (keeping original functionality)
     document.getElementById('loginForm').addEventListener('submit', function(e) {
         const username = document.getElementById('username').value.trim();
         const password = document.getElementById('password').value.trim();
         const errorDiv = document.getElementById('loginError');
-
+        const errorText = errorDiv.querySelector('span');
+        const loginBtn = document.getElementById('loginBtn');
+        
+        // Clear previous errors
+        errorDiv.classList.add('hidden');
+        
         if (!username || !password) {
             e.preventDefault(); // Prevent form submission
-            errorDiv.textContent = 'Please fill in both fields.';
+            errorText.textContent = 'Please fill in both fields.';
             errorDiv.classList.remove('hidden');
+            
+            // Add shake animation to form
+            const formContainer = document.querySelector('.form-container');
+            formContainer.style.animation = 'none';
+            formContainer.offsetHeight; // Trigger reflow
+            formContainer.style.animation = 'errorShake 0.5s ease';
+            
             return false;
         }
+        
+        // Add loading state to button
+        loginBtn.classList.add('loading');
+        
         // If fields are filled, let the form submit normally to Flask
         // Flask will handle incorrect credentials
+    });
+
+    // Enhanced input focus effects
+    const inputs = document.querySelectorAll('input');
+    inputs.forEach(input => {
+      input.addEventListener('focus', function() {
+        this.parentElement.style.transform = 'translateY(-2px)';
+      });
+      
+      input.addEventListener('blur', function() {
+        this.parentElement.style.transform = 'translateY(0)';
+      });
+      
+      // Clear error on input
+      input.addEventListener('input', function() {
+        const errorDiv = document.getElementById('loginError');
+        if (!errorDiv.classList.contains('hidden')) {
+          errorDiv.classList.add('hidden');
+        }
+      });
+    });
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', function() {
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+    });
+
+    // Auto-focus first input
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('username').focus();
     });
   </script>
 </body>
