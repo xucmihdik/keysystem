@@ -777,7 +777,7 @@
             </div>
             
             <script>
-              startCountdownForDashboard('{{ key }}', {{ info.remaining_seconds }});
+              startCountdownForDashboard('{{ key }}', '{{ info.expires_at }}');
             </script>
           {% endfor %}
         {% else %}
@@ -969,17 +969,17 @@
              return res.json();
         })
         .then(data => {
-          if (data.key && data.remaining_seconds !== undefined) {
+          if (data.key && data.expires_at !== undefined) { // Changed to check expires_at
             showNotification(`✅ Key created: ${data.key}`);
-            addKeyToContainer(data.key, data.expires_at, data.remaining_seconds);
+            addKeyToContainer(data.key, data.expires_at); // Pass expires_at
             updateStats();
           } else {
             showNotification("❌ Error creating key: Unexpected response format.");
           }
         })
         .catch(err => {
-             console.error("Create Key Error:", err);
-             showNotification("❌ Error creating key: " + err.message);
+           console.error("Create Key Error:", err);
+           showNotification("❌ Error creating key: " + err.message);
         });
     }
 
@@ -1035,20 +1035,20 @@
           body: JSON.stringify({ key: key, days: days })
         })
         .then(res => {
-             if (!res.ok) {
-                 return res.json().then(err => { throw new Error(err.error || 'Unknown error'); });
-             }
-             return res.json();
+           if (!res.ok) {
+               return res.json().then(err => { throw new Error(err.error || 'Unknown error'); });
+           }
+           return res.json();
         })
         .then(data => {
-          if (data.success && data.new_remaining_seconds !== undefined) {
+          if (data.success && data.new_expires_at !== undefined) { // Changed to check new_expires_at
             showNotification(`✅ Key ${key} updated.`);
             const countdownEl = document.getElementById(`countdown-${key}`);
             if (countdownEl) {
                 if (window.dashboardCountdownIntervals && window.dashboardCountdownIntervals[key]) {
                     clearInterval(window.dashboardCountdownIntervals[key]);
                 }
-                startCountdownForDashboard(key, data.new_remaining_seconds);
+                startCountdownForDashboard(key, data.new_expires_at); // Pass new_expires_at
             }
             if (daysInput) {
               daysInput.value = '';
@@ -1058,8 +1058,8 @@
           }
         })
          .catch(err => {
-             console.error("Manage Key Error:", err);
-             showNotification("❌ Error updating key: " + err.message);
+           console.error("Manage Key Error:", err);
+           showNotification("❌ Error updating key: " + err.message);
          });
       } else {
         showNotification("⚠️ Please enter a valid number of days.");
@@ -1071,7 +1071,7 @@
     }
 
     // --- Key Display and Countdown Functions (KEEPING ALL ORIGINAL FUNCTIONS) ---
-    function addKeyToContainer(key, expiryISO, remainingSeconds) {
+    function addKeyToContainer(key, expiryISO) { // Changed signature
       const keysContainer = document.getElementById('keysContainer');
       if (!keysContainer) {
           console.error("Keys container not found.");
@@ -1104,7 +1104,7 @@
           </div>
           <div class="key-info-item">
             <div class="key-info-label">Time Left</div>
-            <div class="key-info-value countdown-value" id="countdown-${key}">${formatCountdownJS(remainingSeconds)}</div>
+            <div class="key-info-value countdown-value" id="countdown-${key}"></div> <!-- Initial content will be set by JS -->
           </div>
         </div>
         
@@ -1147,18 +1147,18 @@
       `;
       
       keysContainer.appendChild(keyCard);
-      startCountdownForDashboard(key, remainingSeconds);
+      startCountdownForDashboard(key, expiryISO); // Pass expiryISO
     }
 
     // --- Countdown Functions for Dashboard (KEEPING ALL ORIGINAL FUNCTIONS) ---
     window.dashboardCountdownIntervals = window.dashboardCountdownIntervals || {};
 
-    function startCountdownForDashboard(key, initialSeconds) {
+    function startCountdownForDashboard(key, expiryISOString) { // Changed signature
         if (window.dashboardCountdownIntervals[key]) {
             clearInterval(window.dashboardCountdownIntervals[key]);
         }
 
-        let secondsLeft = initialSeconds;
+        const expiryTime = new Date(expiryISOString).getTime(); // Calculate expiry time in milliseconds
         const countdownElement = document.getElementById(`countdown-${key}`);
         if (!countdownElement) {
             console.warn(`Countdown element for key ${key} not found.`);
@@ -1166,25 +1166,26 @@
         }
 
         const updateDisplay = () => {
-            if (document.getElementById(`key-${key}`)) {
-                 if (countdownElement) {
-                     countdownElement.textContent = formatCountdownJS(secondsLeft);
-                 }
-                 secondsLeft--;
-                 if (secondsLeft < 0) {
-                     if (countdownElement) {
-                          countdownElement.textContent = "Expired";
-                     }
-                     clearInterval(window.dashboardCountdownIntervals[key]);
-                     delete window.dashboardCountdownIntervals[key];
-                 }
-            } else {
-                 clearInterval(window.dashboardCountdownIntervals[key]);
-                 delete window.dashboardCountdownIntervals[key];
+            if (!document.getElementById(`key-${key}`)) { // Check if the key card still exists
+               clearInterval(window.dashboardCountdownIntervals[key]);
+               delete window.dashboardCountdownIntervals[key];
+               return;
+            }
+
+            const now = Date.now();
+            let secondsLeft = Math.max(0, Math.floor((expiryTime - now) / 1000));
+
+            if (countdownElement) {
+                countdownElement.textContent = formatCountdownJS(secondsLeft);
+            }
+            
+            if (secondsLeft <= 0) {
+                clearInterval(window.dashboardCountdownIntervals[key]);
+                delete window.dashboardCountdownIntervals[key];
             }
         };
 
-        updateDisplay();
+        updateDisplay(); // Initial call to set the display immediately
         window.dashboardCountdownIntervals[key] = setInterval(updateDisplay, 1000);
     }
 
@@ -1204,4 +1205,4 @@
     });
   </script>
 </body>
-</html> 
+</html>
