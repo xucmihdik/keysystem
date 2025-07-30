@@ -381,11 +381,3 @@ def all_keys():
                 "remaining_seconds": remaining_seconds
             }
     return jsonify(keys_info) # Return JSON data
-
-
-# Run the application
-if __name__ == "__main__":
-    # Get port from environment variable (useful for platforms like Render) or default to 8080
-    port = int(os.environ.get("PORT", 8080))
-    # Run the Flask app, listening on all interfaces (0.0.0.0) on the specified port
-    app.run(host="0.0.0.0", port=port)
